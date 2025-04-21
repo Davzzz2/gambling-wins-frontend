@@ -38,7 +38,7 @@ import Win from './Win';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: process.env.REACT_APP_API_URL,
   headers: {
     'Content-Type': 'application/json'
   },
@@ -312,6 +312,13 @@ const Dashboard = () => {
     setSelectedFile(file);
   };
 
+  const getImageUrl = (imageUrl) => {
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    return `${process.env.REACT_APP_API_URL}${imageUrl}`;
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -477,7 +484,7 @@ const Dashboard = () => {
                         <CardMedia
                           component="img"
                           height="200"
-                          image={`http://localhost:5000${win.imageUrl}`}
+                          image={getImageUrl(win.imageUrl)}
                           alt={win.title}
                           sx={{ objectFit: 'cover' }}
                         />
@@ -578,7 +585,7 @@ const Dashboard = () => {
                         <CardMedia
                           component="img"
                           height="200"
-                          image={`http://localhost:5000${win.imageUrl}`}
+                          image={getImageUrl(win.imageUrl)}
                           alt={win.title}
                           sx={{ objectFit: 'cover' }}
                         />
