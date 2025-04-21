@@ -373,18 +373,20 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                         placement="right"
                         arrow
                       >
-                        <Box
-                          component="span"
+                        <Chip
+                          label={badge.label}
+                          color="secondary"
+                          size="small"
                           sx={{
-                            cursor: 'pointer',
-                            fontSize: '1.2rem',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            ml: 1
+                            backgroundColor: 'hsla(220, 73%, 63%, 0.2)',
+                            border: '1px solid',
+                            borderColor: 'primary.main',
+                            color: 'primary.contrastText',
+                            '& .MuiChip-label': {
+                              textShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
+                            },
                           }}
-                        >
-                          {badge.label}
-                        </Box>
+                        />
                       </Tooltip>
                     ))}
                     {userProfile.role === 'admin' && (
