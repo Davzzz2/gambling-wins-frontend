@@ -153,6 +153,9 @@ const Dashboard = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
+  const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
+  const [selectedWinId, setSelectedWinId] = useState(null);
+  const [declineComment, setDeclineComment] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -317,6 +320,45 @@ const Dashboard = () => {
       return imageUrl;
     }
     return `${process.env.REACT_APP_API_URL}${imageUrl}`;
+  };
+
+  const handleApprove = async (winId) => {
+    try {
+      await api.put(`/api/wins/${winId}/moderate`, {
+        status: 'approved'
+      });
+      fetchPendingWins();
+      enqueueSnackbar('Win approved successfully', { variant: 'success' });
+    } catch (error) {
+      console.error('Error approving win:', error);
+      enqueueSnackbar('Error approving win', { variant: 'error' });
+    }
+  };
+
+  const handleOpenDeclineDialog = (winId) => {
+    setSelectedWinId(winId);
+    setDeclineDialogOpen(true);
+  };
+
+  const handleCloseDeclineDialog = () => {
+    setDeclineDialogOpen(false);
+    setSelectedWinId(null);
+    setDeclineComment('');
+  };
+
+  const handleDecline = async () => {
+    try {
+      await api.put(`/api/wins/${selectedWinId}/moderate`, {
+        status: 'rejected',
+        moderationComment: declineComment
+      });
+      handleCloseDeclineDialog();
+      fetchPendingWins();
+      enqueueSnackbar('Win declined successfully', { variant: 'success' });
+    } catch (error) {
+      console.error('Error declining win:', error);
+      enqueueSnackbar('Error declining win', { variant: 'error' });
+    }
   };
 
   return (
@@ -633,11 +675,11 @@ const Dashboard = () => {
               <Grid container spacing={3}>
                 {pendingWins.map((win) => (
                   <Grid item xs={12} sm={6} md={4} key={win._id}>
-                    <Win
-                      win={win}
-                      onApprove={() => handleModerateWin(win._id, 'approved')}
-                      onReject={() => handleModerateWin(win._id, 'rejected')}
-                      isPending
+                    <Win 
+                      win={win} 
+                      isPending={true}
+                      onApprove={handleApprove}
+                      onReject={handleOpenDeclineDialog}
                     />
                   </Grid>
                 ))}
@@ -758,6 +800,83 @@ const Dashboard = () => {
               </Button>
             </Box>
           </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={declineDialogOpen}
+          onClose={handleCloseDeclineDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              bgcolor: 'background.paper',
+              backgroundImage: 'none',
+            }
+          }}
+        >
+          <DialogTitle>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6">
+                Decline Win
+              </Typography>
+              <IconButton onClick={handleCloseDeclineDialog}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Add an optional comment to explain why this win was declined:
+            </Typography>
+            <TextField
+              autoFocus
+              multiline
+              rows={4}
+              fullWidth
+              value={declineComment}
+              onChange={(e) => setDeclineComment(e.target.value)}
+              placeholder="Enter your comment here (optional)"
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: 'secondary.main',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                }
+              }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button 
+              onClick={handleCloseDeclineDialog}
+              sx={{
+                color: 'secondary.main',
+                borderColor: 'secondary.main',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                }
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDecline}
+              variant="contained"
+              sx={{
+                bgcolor: 'error.main',
+                color: 'error.contrastText',
+                '&:hover': {
+                  bgcolor: 'error.dark',
+                },
+              }}
+            >
+              Decline Win
+            </Button>
+          </DialogActions>
         </Dialog>
       </Box>
     </ThemeProvider>
