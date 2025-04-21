@@ -26,7 +26,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: process.env.REACT_APP_API_URL,
   headers: {
     'Content-Type': 'application/json'
   },
@@ -46,7 +46,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
     if (imageUrl.startsWith('http')) {
       return imageUrl;
     }
-    return `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${imageUrl}`;
+    return `${process.env.REACT_APP_API_URL}${imageUrl}`;
   };
 
   const handleOpen = () => {
