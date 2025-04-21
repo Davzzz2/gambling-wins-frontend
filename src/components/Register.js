@@ -69,21 +69,36 @@ const Register = () => {
         submitData.append('password', formData.password);
         submitData.append('profilePicture', profilePicture);
         
-        await api.post('/api/register', submitData, {
+        const response = await api.post('/api/register', submitData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
+
+        if (response.data.badges?.length > 0) {
+          // Show badge notification before redirecting
+          setError(`Registration successful! You earned: ${response.data.badges.map(b => b.label).join(', ')}`, 'success');
+          setTimeout(() => navigate('/login'), 2000);
+        } else {
+          navigate('/login');
+        }
       } else {
         // If no profile picture selected, send as JSON
-        await api.post('/api/register', {
+        const response = await api.post('/api/register', {
           username: formData.username,
           password: formData.password
         });
-      }
 
-      navigate('/login');
+        if (response.data.badges?.length > 0) {
+          // Show badge notification before redirecting
+          setError(`Registration successful! You earned: ${response.data.badges.map(b => b.label).join(', ')}`, 'success');
+          setTimeout(() => navigate('/login'), 2000);
+        } else {
+          navigate('/login');
+        }
+      }
     } catch (error) {
+      console.error('Registration error:', error);
       setError(error.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
@@ -92,6 +107,8 @@ const Register = () => {
 
   return (
     <Box
+      component="main"
+      tabIndex={-1}
       sx={{
         minHeight: '100vh',
         background: `
@@ -104,10 +121,13 @@ const Register = () => {
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
+        outline: 'none',
       }}
     >
       <Container maxWidth="sm">
         <Paper
+          component="form"
+          onSubmit={handleSubmit}
           sx={{
             p: 4,
             backgroundColor: 'hsla(220, 70%, 12%, 0.8)',
@@ -120,6 +140,7 @@ const Register = () => {
         >
           <Typography
             variant="h4"
+            component="h1"
             align="center"
             gutterBottom
             sx={{
@@ -133,116 +154,130 @@ const Register = () => {
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <Alert 
+              severity={error.includes('successful') ? 'success' : 'error'} 
+              sx={{ 
+                mb: 3,
+                backgroundColor: error.includes('successful') ? 
+                  'hsla(120, 73%, 75%, 0.9)' : 'hsla(0, 73%, 75%, 0.9)',
+                color: '#000',
+                '& .MuiAlert-icon': {
+                  color: '#000',
+                },
+              }}
+            >
               {error}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit}>
-            <Box sx={{ mb: 4, textAlign: 'center' }}>
-              <Avatar
-                src={previewUrl}
-                sx={{
-                  width: 100,
-                  height: 100,
-                  mx: 'auto',
-                  mb: 2,
-                  border: '3px solid',
-                  borderColor: 'hsl(220, 73%, 63%)',
-                  boxShadow: '0 0 20px hsla(220, 73%, 63%, 0.5)',
-                }}
-              />
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<CloudUploadIcon />}
-                sx={{
-                  borderColor: 'hsl(220, 73%, 63%)',
-                  color: 'hsl(220, 89%, 99%)',
-                  '&:hover': {
-                    borderColor: 'hsl(220, 73%, 73%)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  },
-                }}
-              >
-                Choose Profile Picture
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handleProfilePictureChange}
-                />
-              </Button>
-            </Box>
-
-            <TextField
-              fullWidth
-              label="Username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Confirm Password"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              sx={{ mb: 3 }}
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={loading}
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Avatar
+              src={previewUrl}
+              alt="Profile preview"
               sx={{
-                py: 1.5,
-                backgroundColor: 'hsl(220, 73%, 63%)',
-                fontWeight: 600,
+                width: 100,
+                height: 100,
+                mx: 'auto',
+                mb: 2,
+                border: '3px solid',
+                borderColor: 'hsl(220, 73%, 63%)',
+                boxShadow: '0 0 20px hsla(220, 73%, 63%, 0.5)',
+              }}
+            />
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<CloudUploadIcon />}
+              sx={{
+                borderColor: 'hsl(220, 73%, 63%)',
+                color: 'hsl(220, 89%, 99%)',
                 '&:hover': {
-                  backgroundColor: 'hsl(220, 73%, 53%)',
+                  borderColor: 'hsl(220, 73%, 73%)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                },
+                '&:focus': {
+                  boxShadow: '0 0 0 2px hsla(220, 73%, 63%, 0.5)',
                 },
               }}
             >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                'Register'
-              )}
+              Choose Profile Picture
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={handleProfilePictureChange}
+                aria-label="Upload profile picture"
+              />
             </Button>
+          </Box>
 
-            <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: 'hsl(220, 89%, 99%)',
-                  '& a': {
-                    color: 'hsl(220, 73%, 63%)',
-                    textDecoration: 'none',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    },
+          <TextField
+            fullWidth
+            label="Username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Confirm Password"
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+            sx={{ mb: 3 }}
+          />
+
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            disabled={loading}
+            sx={{
+              py: 1.5,
+              backgroundColor: 'hsl(220, 73%, 63%)',
+              fontWeight: 600,
+              '&:hover': {
+                backgroundColor: 'hsl(220, 73%, 53%)',
+              },
+            }}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Register'
+            )}
+          </Button>
+
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'hsl(220, 89%, 99%)',
+                '& a': {
+                  color: 'hsl(220, 73%, 63%)',
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
                   },
-                }}
-              >
-                Already have an account? <Link to="/login">Login here</Link>
-              </Typography>
-            </Box>
+                },
+              }}
+            >
+              Already have an account? <Link to="/login">Login here</Link>
+            </Typography>
           </Box>
         </Paper>
       </Container>
