@@ -360,10 +360,9 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                   }}
                 />
                 <Box className="css-0">
-                  <Box className="css-axw7ok" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography 
                       variant="h5" 
-                      className="css-15rgj8s-MuiTypography-root"
                       sx={{ 
                         fontWeight: 700,
                         color: 'primary.contrastText',
@@ -378,16 +377,37 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                         label="Admin"
                         color="primary"
                         size="small"
-                        className="css-1365dr5-MuiChip-root"
                       />
                     )}
                   </Box>
-                  <Typography variant="body2" className="css-1rz1o7q-MuiTypography-root">
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                     Joined {format(new Date(userProfile.joinDate), 'MMMM yyyy')}
                   </Typography>
-                  <Typography variant="body2" className="css-1rz1o7q-MuiTypography-root">
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                     {userProfile.uploadCount} uploads
                   </Typography>
+                  {userProfile.badges && userProfile.badges.length > 0 && (
+                    <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {userProfile.badges.map((badge, index) => (
+                        <Chip
+                          key={index}
+                          label={badge.label}
+                          color="secondary"
+                          size="small"
+                          sx={{
+                            backgroundColor: 'hsla(220, 73%, 63%, 0.2)',
+                            border: '1px solid',
+                            borderColor: 'primary.main',
+                            color: 'primary.contrastText',
+                            '& .MuiChip-label': {
+                              textShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
+                            },
+                          }}
+                          title={badge.description}
+                        />
+                      ))}
+                    </Box>
+                  )}
                 </Box>
               </Box>
 
