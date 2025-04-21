@@ -370,6 +370,33 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                       }}
                     >
                       {userProfile.username}
+                      {userProfile.badges?.some(badge => badge.type === 'firstUser') && (
+                        <Box
+                          component="span"
+                          sx={{
+                            ml: 1,
+                            cursor: 'help',
+                            position: 'relative',
+                            '&:hover::after': {
+                              content: '""',
+                              position: 'absolute',
+                              bottom: '100%',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              padding: '4px 8px',
+                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                              color: 'white',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              whiteSpace: 'nowrap',
+                              content: (theme) => `"${userProfile.badges.find(b => b.type === 'firstUser').description}"`,
+                              zIndex: 1,
+                            }
+                          }}
+                        >
+                          {userProfile.badges.find(b => b.type === 'firstUser').label}
+                        </Box>
+                      )}
                     </Typography>
                     {userProfile.role === 'admin' && (
                       <Chip
