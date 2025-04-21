@@ -138,9 +138,16 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                 component="div"
                 className="username"
                 sx={{ 
-                  fontWeight: 700,
+                  fontWeight: 800,
                   color: 'primary.contrastText',
-                  textShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
+                  textShadow: '0 0 12px hsla(220, 73%, 63%, 0.6)',
+                  fontSize: '1.1rem',
+                  letterSpacing: '0.02em',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    textShadow: '0 0 16px hsla(220, 73%, 63%, 0.8)',
+                    color: theme => theme.palette.primary.light,
+                  }
                 }}
               >
                 {win.createdBy}
@@ -148,7 +155,15 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
               <Typography 
                 variant="caption" 
                 sx={{ 
-                  color: 'rgba(255, 255, 255, 0.7)',
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                  letterSpacing: '0.01em',
+                  opacity: 0.85,
+                  transition: 'opacity 0.2s ease',
+                  '&:hover': {
+                    opacity: 1
+                  }
                 }}
               >
                 {formatDistanceToNow(new Date(win.createdAt), { addSuffix: true })}
