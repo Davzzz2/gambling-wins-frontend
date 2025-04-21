@@ -15,11 +15,11 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.REACT_APP_API_URL;
 
 const getImageUrl = (path) => {
   if (!path) return null;
-  return path.startsWith('http') ? path : `${BACKEND_URL}/${path}`;
+  return path.startsWith('http') ? path : `${BACKEND_URL}${path}`;
 };
 
 function Settings() {
