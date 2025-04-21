@@ -35,6 +35,7 @@ import {
   Divider,
   Chip,
   CircularProgress,
+  Tooltip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
@@ -1080,6 +1081,27 @@ const Home = () => {
                             >
                               {userProfile.username}
                             </Typography>
+                            {userProfile.badges?.map((badge, index) => (
+                              <Tooltip
+                                key={`${badge.type}-${index}`}
+                                title={badge.description}
+                                placement="right"
+                                arrow
+                              >
+                                <Box
+                                  component="span"
+                                  sx={{
+                                    cursor: 'pointer',
+                                    fontSize: '1.2rem',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    ml: 1
+                                  }}
+                                >
+                                  {badge.label}
+                                </Box>
+                              </Tooltip>
+                            ))}
                             {userProfile.role === 'admin' && (
                               <Chip
                                 icon={<AdminPanelSettingsIcon />}
