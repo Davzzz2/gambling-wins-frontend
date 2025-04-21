@@ -391,13 +391,6 @@ const Home = () => {
   const menuOpen = Boolean(anchorEl);
   const [loading, setLoading] = useState(true);
 
-  // Add debug logging
-  useEffect(() => {
-    console.log('Auth state:', { isAuthenticated, isAdmin });
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    console.log('Stored user:', user);
-  }, [isAuthenticated, isAdmin]);
-
   const handleLogout = () => {
     logout();
     // No need to navigate since we're already on the home page
