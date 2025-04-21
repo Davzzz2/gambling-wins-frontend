@@ -629,23 +629,25 @@ const Home = () => {
                       Admin
                     </Button>
                   )}
-                  <IconButton
-                    onClick={handleOpenNotifications}
-                    sx={{
-                      p: 0.5,
-                      border: '2px solid',
-                      borderColor: 'primary.main',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 0 20px hsla(220, 73%, 63%, 0.5)',
-                      },
-                    }}
-                  >
-                    <Badge badgeContent={unreadCount} color="primary">
-                      <InboxIcon />
-                    </Badge>
-                  </IconButton>
+                  {!isAdmin && (
+                    <IconButton
+                      onClick={handleOpenNotifications}
+                      sx={{
+                        p: 0.5,
+                        border: '2px solid',
+                        borderColor: 'primary.main',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 0 20px hsla(220, 73%, 63%, 0.5)',
+                        },
+                      }}
+                    >
+                      <Badge badgeContent={unreadCount} color="primary">
+                        <InboxIcon />
+                      </Badge>
+                    </IconButton>
+                  )}
                   <IconButton
                     onClick={handleProfileClick}
                     sx={{
