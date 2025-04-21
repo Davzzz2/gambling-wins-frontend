@@ -57,7 +57,7 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(user));
 
       // Update auth context
-      login(token, user);
+      login(user);
 
       // Configure default headers for future requests
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
