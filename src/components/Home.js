@@ -36,6 +36,10 @@ import {
   Chip,
   CircularProgress,
   Tooltip,
+  Badge,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
@@ -47,6 +51,10 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import InboxIcon from '@mui/icons-material/Inbox';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { formatDistanceToNow, format } from 'date-fns';
 
 // Create axios instance with base URL
@@ -391,6 +399,9 @@ const Home = () => {
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const menuOpen = Boolean(anchorEl);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -412,6 +423,24 @@ const Home = () => {
   useEffect(() => {
     fetchWins();
   }, [fetchWins]);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (isAuthenticated) {
+        try {
+          const response = await api.get('/api/notifications/unread/count');
+          setUnreadCount(response.data.count);
+        } catch (error) {
+          console.error('Error fetching unread count:', error);
+        }
+      }
+    };
+
+    fetchUnreadCount();
+    // Poll for new notifications every minute
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
@@ -519,6 +548,33 @@ const Home = () => {
     setUserProfile(null);
   };
 
+  const handleOpenNotifications = async () => {
+    try {
+      const response = await api.get('/api/notifications');
+      setNotifications(response.data);
+      setNotificationsOpen(true);
+      
+      // Mark notifications as read
+      if (response.data.length > 0) {
+        const unreadIds = response.data
+          .filter(n => !n.read)
+          .map(n => n._id);
+        
+        if (unreadIds.length > 0) {
+          await api.put('/api/notifications/read', { notificationIds: unreadIds });
+          setUnreadCount(0);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      showSnackbar('Error loading notifications', 'error');
+    }
+  };
+
+  const handleCloseNotifications = () => {
+    setNotificationsOpen(false);
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -573,6 +629,23 @@ const Home = () => {
                       Admin
                     </Button>
                   )}
+                  <IconButton
+                    onClick={handleOpenNotifications}
+                    sx={{
+                      p: 0.5,
+                      border: '2px solid',
+                      borderColor: 'primary.main',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 0 20px hsla(220, 73%, 63%, 0.5)',
+                      },
+                    }}
+                  >
+                    <Badge badgeContent={unreadCount} color="primary">
+                      <InboxIcon />
+                    </Badge>
+                  </IconButton>
                   <IconButton
                     onClick={handleProfileClick}
                     sx={{
@@ -1169,6 +1242,102 @@ const Home = () => {
                 </Box>
               </DialogContent>
             )}
+          </Dialog>
+
+          {/* Notifications Dialog */}
+          <Dialog
+            open={notificationsOpen}
+            onClose={handleCloseNotifications}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              sx: {
+                bgcolor: 'background.paper',
+                backgroundImage: 'none',
+              }
+            }}
+          >
+            <DialogTitle>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6">
+                  Notifications
+                </Typography>
+                <IconButton onClick={handleCloseNotifications}>
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent>
+              {notifications.length === 0 ? (
+                <Box sx={{ 
+                  py: 4, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center',
+                  gap: 2
+                }}>
+                  <NotificationsIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
+                  <Typography color="text.secondary">
+                    No notifications yet
+                  </Typography>
+                </Box>
+              ) : (
+                <List>
+                  {notifications.map((notification) => (
+                    <ListItem
+                      key={notification._id}
+                      sx={{
+                        borderRadius: 1,
+                        mb: 1,
+                        backgroundColor: notification.read ? 'transparent' : 'rgba(255, 255, 255, 0.05)',
+                      }}
+                    >
+                      <ListItemIcon>
+                        {notification.type === 'win_approved' ? (
+                          <CheckCircleIcon color="success" />
+                        ) : (
+                          <CancelIcon color="error" />
+                        )}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={
+                          <Typography variant="subtitle1">
+                            {notification.type === 'win_approved' 
+                              ? 'Win Approved!' 
+                              : 'Win Declined'}
+                          </Typography>
+                        }
+                        secondary={
+                          <>
+                            <Typography variant="body2" component="span" display="block">
+                              {notification.winTitle}
+                            </Typography>
+                            {notification.message && (
+                              <Typography 
+                                variant="body2" 
+                                component="span" 
+                                display="block"
+                                sx={{ mt: 0.5, color: 'text.secondary' }}
+                              >
+                                Admin comment: {notification.message}
+                              </Typography>
+                            )}
+                            <Typography 
+                              variant="caption" 
+                              component="span" 
+                              display="block"
+                              sx={{ mt: 0.5 }}
+                            >
+                              {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                            </Typography>
+                          </>
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </DialogContent>
           </Dialog>
 
           <Snackbar
