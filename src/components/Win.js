@@ -67,6 +67,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
     setLoading(true);
     try {
       const response = await api.get(`/api/users/${win.createdBy}`);
+      console.log('User profile response:', response.data);
       setUserProfile(response.data);
       setUserProfileOpen(true);
     } catch (error) {
@@ -361,43 +362,50 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                 />
                 <Box className="css-0">
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography 
-                      variant="h5" 
-                      sx={{ 
-                        fontWeight: 700,
-                        color: 'primary.contrastText',
-                        textShadow: '0 0 15px hsla(220, 73%, 63%, 0.6)',
-                      }}
-                    >
-                      {userProfile.username}
-                      {userProfile.badges?.some(badge => badge.type === 'firstUser') && (
-                        <Box
-                          component="span"
-                          sx={{
-                            ml: 1,
-                            cursor: 'help',
-                            position: 'relative',
-                            '&:hover::after': {
-                              content: '""',
-                              position: 'absolute',
-                              bottom: '100%',
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              padding: '4px 8px',
-                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                              color: 'white',
-                              borderRadius: '4px',
-                              fontSize: '0.75rem',
-                              whiteSpace: 'nowrap',
-                              content: (theme) => `"${userProfile.badges.find(b => b.type === 'firstUser').description}"`,
-                              zIndex: 1,
-                            }
-                          }}
-                        >
-                          {userProfile.badges.find(b => b.type === 'firstUser').label}
-                        </Box>
-                      )}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Typography 
+                        variant="h5" 
+                        sx={{ 
+                          fontWeight: 700,
+                          color: 'primary.contrastText',
+                          textShadow: '0 0 15px hsla(220, 73%, 63%, 0.6)',
+                        }}
+                      >
+                        {userProfile.username}
+                      </Typography>
+                      {userProfile.badges && userProfile.badges.length > 0 && userProfile.badges.map((badge) => (
+                        badge.type === 'firstUser' && (
+                          <Box
+                            key={badge.type}
+                            component="span"
+                            sx={{
+                              ml: 1,
+                              cursor: 'help',
+                              position: 'relative',
+                              fontSize: '1.2rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              '&:hover::after': {
+                                content: `"${badge.description}"`,
+                                position: 'absolute',
+                                bottom: '100%',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                padding: '4px 8px',
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                color: 'white',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                whiteSpace: 'nowrap',
+                                zIndex: 1000,
+                              }
+                            }}
+                          >
+                            {badge.label}
+                          </Box>
+                        )
+                      ))}
+                    </Box>
                     {userProfile.role === 'admin' && (
                       <Chip
                         icon={<AdminPanelSettingsIcon />}
