@@ -62,10 +62,25 @@ const Register = () => {
     }
 
     try {
-      await api.post('/api/register', {
-        username: formData.username,
-        password: formData.password
-      });
+      let submitData;
+      if (profilePicture) {
+        submitData = new FormData();
+        submitData.append('username', formData.username);
+        submitData.append('password', formData.password);
+        submitData.append('profilePicture', profilePicture);
+        
+        await api.post('/api/register', submitData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      } else {
+        // If no profile picture selected, send as JSON
+        await api.post('/api/register', {
+          username: formData.username,
+          password: formData.password
+        });
+      }
 
       navigate('/login');
     } catch (error) {
