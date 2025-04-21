@@ -16,6 +16,14 @@ import {
 import LoginIcon from '@mui/icons-material/Login';
 import axios from 'axios';
 
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  withCredentials: true
+});
+
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -43,11 +51,9 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/login', {
+      const response = await api.post('/api/login', {
         username: formData.username,
         password: formData.password
-      }, {
-        withCredentials: true
       });
 
       if (response.data.token) {
