@@ -27,10 +27,8 @@ const api = axios.create({
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-  });
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -41,10 +39,6 @@ const Login = () => {
     severity: 'success'
   });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -52,30 +46,33 @@ const Login = () => {
 
     try {
       const response = await api.post('/api/login', {
-        username: formData.username,
-        password: formData.password
+        username,
+        password
       });
 
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        await login(response.data.user);
-        setSnackbar({
-          open: true,
-          message: 'Login successful!',
-          severity: 'success'
-        });
-        setTimeout(() => {
-          navigate('/');
-        }, 1000);
-      }
+      const { token, user } = response.data;
+      
+      // Store token and user info
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      // Update auth context
+      login(token, user);
+
+      // Configure default headers for future requests
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      setSnackbar({
+        open: true,
+        message: 'Login successful!',
+        severity: 'success'
+      });
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
     } catch (error) {
       console.error('Login error:', error);
-      setError(
-        error.response?.data?.message || 
-        error.message || 
-        'An error occurred during login. Please try again.'
-      );
+      setError(error.response?.data?.message || 'Failed to login');
     } finally {
       setLoading(false);
     }
@@ -145,8 +142,8 @@ const Login = () => {
               fullWidth
               label="Username"
               name="username"
-              value={formData.username}
-              onChange={handleChange}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               sx={{ mb: 2 }}
             />
@@ -155,8 +152,8 @@ const Login = () => {
               label="Password"
               name="password"
               type="password"
-              value={formData.password}
-              onChange={handleChange}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
               sx={{ mb: 3 }}
             />
