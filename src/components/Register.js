@@ -62,17 +62,9 @@ const Register = () => {
     }
 
     try {
-      const submitData = new FormData();
-      submitData.append('username', formData.username);
-      submitData.append('password', formData.password);
-      if (profilePicture) {
-        submitData.append('profilePicture', profilePicture);
-      }
-
-      await api.post('/api/register', submitData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      await api.post('/api/register', {
+        username: formData.username,
+        password: formData.password
       });
 
       navigate('/login');
