@@ -242,6 +242,130 @@ const Particles = () => {
   );
 };
 
+// Styled upload area component
+const UploadArea = ({ onImageSelect, selectedImage }) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDrag = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDragIn = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragOut = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      onImageSelect(e.dataTransfer.files[0]);
+      e.dataTransfer.clearData();
+    }
+  }, [onImageSelect]);
+
+  return (
+    <Box
+      sx={{
+        width: '100%',
+        height: 200,
+        border: '2px dashed',
+        borderColor: isDragging ? 'primary.main' : 'secondary.main',
+        borderRadius: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        backgroundColor: isDragging ? 'rgba(66, 133, 244, 0.1)' : 'transparent',
+        position: 'relative',
+        overflow: 'hidden',
+        '&:hover': {
+          borderColor: 'primary.main',
+          backgroundColor: 'rgba(66, 133, 244, 0.05)',
+        }
+      }}
+      component="label"
+      onDragEnter={handleDragIn}
+      onDragLeave={handleDragOut}
+      onDragOver={handleDrag}
+      onDrop={handleDrop}
+    >
+      <input
+        type="file"
+        hidden
+        accept="image/*"
+        onChange={(e) => onImageSelect(e.target.files[0])}
+      />
+      {selectedImage ? (
+        <Box
+          sx={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <img
+            src={URL.createObjectURL(selectedImage)}
+            alt="Preview"
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: 0,
+              transition: 'opacity 0.3s',
+              '&:hover': {
+                opacity: 1,
+              },
+            }}
+          >
+            <Typography variant="body2" color="white">
+              Click or drag to change image
+            </Typography>
+          </Box>
+        </Box>
+      ) : (
+        <>
+          <CloudUploadIcon sx={{ fontSize: 48, color: 'secondary.main', mb: 1 }} />
+          <Typography variant="body1" color="textSecondary" align="center">
+            Click or drag image to upload
+          </Typography>
+          <Typography variant="caption" color="textSecondary" sx={{ mt: 1 }}>
+            Supports: JPG, PNG, GIF (Max 5MB)
+          </Typography>
+        </>
+      )}
+    </Box>
+  );
+};
+
 const Home = () => {
   const [wins, setWins] = useState([]);
   const [selectedWin, setSelectedWin] = useState(null);
@@ -666,59 +790,79 @@ const Home = () => {
             fullWidth
             PaperProps={{
               sx: {
-                bgcolor: 'background.paper',
-                backgroundImage: 'none',
-                boxShadow: '0 0 30px hsla(220, 73%, 63%, 0.3)',
+                background: 'linear-gradient(to bottom right, hsla(220, 70%, 12%, 0.95), hsla(220, 70%, 8%, 0.95))',
+                backdropFilter: 'blur(20px)',
               }
             }}
           >
-            <DialogTitle>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography 
-                  variant="h6"
-                  sx={{
-                    color: 'primary.contrastText',
-                    textShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
-                  }}
-                >
-                  Share Your Win
-                </Typography>
-                <IconButton 
-                  onClick={handleCloseUploadDialog}
-                  sx={{ 
-                    color: 'primary.contrastText',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      color: 'primary.main',
-                      transform: 'rotate(90deg)',
-                    }
-                  }}
-                >
-                  <CloseIcon />
-                </IconButton>
-              </Box>
+            <DialogTitle sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              borderBottom: '1px solid',
+              borderColor: 'secondary.main',
+              pb: 2
+            }}>
+              <Typography variant="h6" component="div" sx={{ 
+                color: 'primary.contrastText',
+                fontWeight: 'bold'
+              }}>
+                Share Your Win
+              </Typography>
+              <IconButton
+                aria-label="close"
+                onClick={handleCloseUploadDialog}
+                sx={{
+                  color: 'primary.contrastText',
+                  '&:hover': {
+                    color: 'primary.main',
+                  }
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
             </DialogTitle>
-            <DialogContent>
-              <Box component="form" onSubmit={handleSubmitWin} sx={{ mt: 2 }}>
+            <DialogContent sx={{ mt: 2 }}>
+              <Box component="form" onSubmit={handleSubmitWin} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <TextField
                   name="title"
                   label="Title"
-                  fullWidth
                   required
+                  fullWidth
                   value={uploadForm.title}
                   onChange={handleUploadFormChange}
-                  sx={{ mb: 2 }}
+                  variant="outlined"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: 'secondary.main',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'primary.main',
+                      },
+                    }
+                  }}
                 />
                 <TextField
                   name="description"
                   label="Description"
-                  fullWidth
                   required
+                  fullWidth
                   multiline
                   rows={4}
                   value={uploadForm.description}
                   onChange={handleUploadFormChange}
-                  sx={{ mb: 3 }}
+                  variant="outlined"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: 'secondary.main',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'primary.main',
+                      },
+                    }
+                  }}
                 />
                 <TextField
                   name="kickClipUrl"
@@ -726,61 +870,40 @@ const Home = () => {
                   fullWidth
                   value={uploadForm.kickClipUrl}
                   onChange={handleUploadFormChange}
-                  sx={{ mb: 3 }}
-                  placeholder="https://kick.com/video/..."
-                />
-                <Box
+                  variant="outlined"
                   sx={{
-                    border: '2px dashed',
-                    borderColor: 'primary.main',
-                    borderRadius: 2,
-                    p: 3,
-                    textAlign: 'center',
-                    mb: 3,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      borderColor: 'primary.light',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: 'secondary.main',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'primary.main',
+                      },
+                    }
                   }}
-                  component="label"
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    name="image"
-                    onChange={handleUploadFormChange}
-                    style={{ display: 'none' }}
-                  />
-                  {imagePreview ? (
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: 200,
-                        backgroundImage: `url(${imagePreview})`,
-                        backgroundSize: 'contain',
-                        backgroundPosition: 'center',
-                        backgroundRepeat: 'no-repeat',
-                      }}
-                    />
-                  ) : (
-                    <Box sx={{ color: 'text.secondary' }}>
-                      <CloudUploadIcon sx={{ fontSize: 48, mb: 1 }} />
-                      <Typography>Click or drag to upload an image</Typography>
-                    </Box>
-                  )}
-                </Box>
+                />
+                <UploadArea 
+                  onImageSelect={(file) => setUploadForm(prev => ({ ...prev, image: file }))}
+                  selectedImage={uploadForm.image}
+                />
               </Box>
             </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 3 }}>
+            <DialogActions sx={{ 
+              px: 3, 
+              py: 2,
+              borderTop: '1px solid',
+              borderColor: 'secondary.main',
+            }}>
               <Button 
                 onClick={handleCloseUploadDialog}
+                variant="outlined"
                 sx={{
-                  color: 'text.secondary',
+                  color: 'secondary.main',
+                  borderColor: 'secondary.main',
                   '&:hover': {
+                    borderColor: 'primary.main',
                     color: 'primary.main',
-                  },
+                  }
                 }}
               >
                 Cancel
@@ -788,12 +911,17 @@ const Home = () => {
               <Button
                 onClick={handleSubmitWin}
                 variant="contained"
+                disabled={!uploadForm.title || !uploadForm.description || !uploadForm.image}
                 sx={{
-                  backgroundColor: 'primary.main',
-                  fontWeight: 600,
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
                   '&:hover': {
-                    backgroundColor: 'primary.dark',
+                    bgcolor: 'primary.dark',
                   },
+                  '&:disabled': {
+                    bgcolor: 'secondary.main',
+                    color: 'secondary.contrastText',
+                  }
                 }}
               >
                 Submit
