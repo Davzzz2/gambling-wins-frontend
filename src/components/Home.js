@@ -50,7 +50,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: process.env.REACT_APP_API_URL,
   headers: {
     'Content-Type': 'application/json'
   },
@@ -80,7 +80,7 @@ api.interceptors.response.use((response) => {
 });
 
 // Backend URL for images
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = process.env.REACT_APP_API_URL;
 
 // Helper function to get image URL
 const getImageUrl = (imageUrl) => {
