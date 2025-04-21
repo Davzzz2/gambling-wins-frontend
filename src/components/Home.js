@@ -84,6 +84,8 @@ api.interceptors.response.use((response) => {
   if (error.response?.status === 401) {
     // Handle unauthorized access
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
   }
   return Promise.reject(error);
 });
@@ -410,8 +412,12 @@ const Home = () => {
 
   const fetchWins = useCallback(async () => {
     try {
+      const token = localStorage.getItem('token');
       const response = await api.get('/api/wins', {
-        params: { type: currentTab }
+        params: { type: currentTab },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       setWins(response.data);
     } catch (error) {
