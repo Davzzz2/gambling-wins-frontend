@@ -14,6 +14,14 @@ import {
 import axios from 'axios';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  withCredentials: true
+});
+
 const Register = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -61,7 +69,7 @@ const Register = () => {
         submitData.append('profilePicture', profilePicture);
       }
 
-      await axios.post('http://localhost:5000/api/register', submitData, {
+      await api.post('/api/register', submitData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
