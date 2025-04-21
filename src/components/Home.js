@@ -426,9 +426,14 @@ const Home = () => {
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
-      if (isAuthenticated) {
+      if (isAuthenticated && !isAdmin) {
         try {
-          const response = await api.get('/api/notifications/unread/count');
+          const token = localStorage.getItem('token');
+          const response = await api.get('/api/notifications/unread/count', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
           setUnreadCount(response.data.count);
         } catch (error) {
           console.error('Error fetching unread count:', error);
@@ -440,7 +445,7 @@ const Home = () => {
     // Poll for new notifications every minute
     const interval = setInterval(fetchUnreadCount, 60000);
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isAdmin]);
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
@@ -550,7 +555,12 @@ const Home = () => {
 
   const handleOpenNotifications = async () => {
     try {
-      const response = await api.get('/api/notifications');
+      const token = localStorage.getItem('token');
+      const response = await api.get('/api/notifications', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       setNotifications(response.data);
       setNotificationsOpen(true);
       
@@ -561,7 +571,14 @@ const Home = () => {
           .map(n => n._id);
         
         if (unreadIds.length > 0) {
-          await api.put('/api/notifications/read', { notificationIds: unreadIds });
+          await api.put('/api/notifications/read', 
+            { notificationIds: unreadIds },
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
           setUnreadCount(0);
         }
       }
