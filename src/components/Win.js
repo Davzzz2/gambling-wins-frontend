@@ -34,6 +34,17 @@ const api = axios.create({
   withCredentials: true
 });
 
+// Add request interceptor to handle authorization
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
 const Win = ({ win, onApprove, onReject, isPending = false }) => {
   const [open, setOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
@@ -44,9 +55,8 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
   const [fullImageOpen, setFullImageOpen] = useState(false);
 
   const getImageUrl = (imageUrl) => {
-    if (imageUrl.startsWith('http')) {
-      return imageUrl;
-    }
+    if (!imageUrl) return null;
+    if (imageUrl.startsWith('http')) return imageUrl;
     return `${process.env.REACT_APP_API_URL}${imageUrl}`;
   };
 
@@ -67,7 +77,12 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
     e.stopPropagation();
     setLoading(true);
     try {
-      const response = await api.get(`/api/users/${win.createdBy}`);
+      const token = localStorage.getItem('token');
+      const response = await api.get(`/api/users/${win.createdBy}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       console.log('User profile response:', response.data);
       setUserProfile(response.data);
       setUserProfileOpen(true);
@@ -123,7 +138,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
             onClick={handleOpenUserProfile}
           >
             <Avatar
-              src={win.userProfilePic}
+              src={getImageUrl(win.userProfilePic)}
               alt={win.createdBy}
               sx={{ 
                 width: 40, 
