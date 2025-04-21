@@ -16,6 +16,7 @@ import {
   Grid,
   Paper,
   CircularProgress,
+  Tooltip,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -361,64 +362,44 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                   }}
                 />
                 <Box className="css-0">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography 
-                        variant="h5" 
-                        sx={{ 
-                          fontWeight: 700,
-                          color: 'primary.contrastText',
-                          textShadow: '0 0 15px hsla(220, 73%, 63%, 0.6)',
-                        }}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <Typography variant="h6" component="div">
+                      {userProfile.username}
+                    </Typography>
+                    {userProfile.badges?.map((badge, index) => (
+                      <Tooltip
+                        key={`${badge.type}-${index}`}
+                        title={badge.description}
+                        placement="right"
+                        arrow
                       >
-                        {userProfile.username}
-                      </Typography>
-                      {userProfile.badges && userProfile.badges.length > 0 && userProfile.badges.map((badge) => (
-                        badge.type === 'firstUser' && (
-                          <Box
-                            key={badge.type}
-                            component="span"
-                            sx={{
-                              ml: 1,
-                              cursor: 'help',
-                              position: 'relative',
-                              fontSize: '1.2rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              '&:hover::after': {
-                                content: `"${badge.description}"`,
-                                position: 'absolute',
-                                bottom: '100%',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                padding: '4px 8px',
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                color: 'white',
-                                borderRadius: '4px',
-                                fontSize: '0.75rem',
-                                whiteSpace: 'nowrap',
-                                zIndex: 1000,
-                              }
-                            }}
-                          >
-                            {badge.label}
-                          </Box>
-                        )
-                      ))}
-                    </Box>
+                        <Box
+                          component="span"
+                          sx={{
+                            cursor: 'pointer',
+                            fontSize: '1.2rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            ml: 1
+                          }}
+                        >
+                          {badge.label}
+                        </Box>
+                      </Tooltip>
+                    ))}
                     {userProfile.role === 'admin' && (
                       <Chip
-                        icon={<AdminPanelSettingsIcon />}
                         label="Admin"
-                        color="primary"
                         size="small"
+                        color="primary"
+                        sx={{ ml: 1 }}
                       />
                     )}
                   </Box>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    Joined {format(new Date(userProfile.joinDate), 'MMMM yyyy')}
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Joined {new Date(userProfile.joinDate).toLocaleDateString()}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
                     {userProfile.uploadCount} uploads
                   </Typography>
                   {userProfile.badges && userProfile.badges.length > 0 && (
