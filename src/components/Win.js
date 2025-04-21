@@ -404,28 +404,6 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     {userProfile.uploadCount} uploads
                   </Typography>
-                  {userProfile.badges && userProfile.badges.length > 0 && (
-                    <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      {userProfile.badges.map((badge, index) => (
-                        <Chip
-                          key={index}
-                          label={badge.label}
-                          color="secondary"
-                          size="small"
-                          sx={{
-                            backgroundColor: 'hsla(220, 73%, 63%, 0.2)',
-                            border: '1px solid',
-                            borderColor: 'primary.main',
-                            color: 'primary.contrastText',
-                            '& .MuiChip-label': {
-                              textShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
-                            },
-                          }}
-                          title={badge.description}
-                        />
-                      ))}
-                    </Box>
-                  )}
                 </Box>
               </Box>
 
