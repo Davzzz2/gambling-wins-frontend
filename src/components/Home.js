@@ -398,6 +398,7 @@ const Home = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
+  const [userProfileLoading, setUserProfileLoading] = useState(false);
   const menuOpen = Boolean(anchorEl);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
