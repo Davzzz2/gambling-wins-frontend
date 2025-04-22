@@ -658,7 +658,7 @@ const Home = () => {
             <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 2, alignItems: 'center' }}>
               {authUser ? (
                 <>
-                  {authUser.isAdmin && (
+                  {currentUser?.role === 'admin' && (
                     <Button
                       color="inherit"
                       component={Link}
@@ -681,7 +681,7 @@ const Home = () => {
                       Admin
                     </Button>
                   )}
-                  {!authUser.isAdmin && (
+                  {currentUser?.role !== 'admin' && (
                     <IconButton
                       onClick={handleOpenNotifications}
                       sx={{
