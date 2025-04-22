@@ -22,7 +22,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CloseIcon from '@mui/icons-material/Close';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
-import { formatDistanceToNow } from 'date-fns';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import { formatDistanceToNow, format } from 'date-fns';
 import { api } from '../services/api';
 
 const Win = ({ win, onApprove, onReject, isPending = false }) => {
@@ -327,6 +328,8 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
           sx: {
             bgcolor: 'background.paper',
             backgroundImage: 'none',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
           }
         }}
       >
@@ -347,7 +350,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
             <Box sx={{ py: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
                 <Avatar
-                  src={userProfile.profilePicture}
+                  src={getImageUrl(userProfile.profilePicture)}
                   alt={userProfile.username}
                   sx={{ 
                     width: 80, 
@@ -360,57 +363,62 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                 />
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <Typography variant="h6" component="div">
+                    <Typography variant="h5" sx={{ 
+                      fontWeight: 600,
+                      color: 'primary.contrastText',
+                      textShadow: '0 0 15px hsla(220, 73%, 63%, 0.6)',
+                    }}>
                       {userProfile.username}
                     </Typography>
-                    {userProfile.badges?.map((badge, index) => (
-                      <Tooltip
-                        key={`${badge.type}-${index}`}
-                        title={badge.description}
-                        placement="right"
-                        arrow
-                      >
-                        <Chip
-                          label={badge.label}
-                          color="secondary"
-                          size="small"
-                          sx={{
-                            backgroundColor: 'hsla(220, 73%, 63%, 0.2)',
-                            border: '1px solid',
-                            borderColor: 'primary.main',
-                            color: 'primary.contrastText',
-                            '& .MuiChip-label': {
-                              textShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
-                            },
-                          }}
-                        />
-                      </Tooltip>
-                    ))}
                     {userProfile.role === 'admin' && (
                       <Chip
+                        icon={<AdminPanelSettingsIcon />}
                         label="Admin"
                         size="small"
                         color="primary"
-                        sx={{ ml: 1 }}
+                        sx={{
+                          backgroundColor: 'hsla(220, 73%, 63%, 0.2)',
+                          border: '1px solid',
+                          borderColor: 'primary.main',
+                          '& .MuiChip-icon': {
+                            color: 'primary.main',
+                          },
+                        }}
                       />
                     )}
                   </Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Joined {new Date(userProfile.joinDate).toLocaleDateString()}
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                    Joined {format(new Date(userProfile.joinDate), 'MMMM yyyy')}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     {userProfile.uploadCount} uploads
                   </Typography>
                 </Box>
               </Box>
 
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom sx={{
+                color: 'primary.contrastText',
+                textShadow: '0 0 12px hsla(220, 73%, 63%, 0.4)',
+                fontWeight: 600,
+                mb: 2,
+              }}>
                 Recent Wins
               </Typography>
               <Grid container spacing={2}>
                 {userProfile.recentWins.map((recentWin) => (
                   <Grid item xs={12} sm={6} md={4} key={recentWin._id}>
-                    <Paper>
+                    <Paper sx={{
+                      p: 1,
+                      backgroundColor: 'hsla(220, 70%, 15%, 0.6)',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid hsla(220, 73%, 63%, 0.2)',
+                      borderRadius: '12px',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+                      },
+                    }}>
                       <img
                         src={getImageUrl(recentWin.imageUrl)}
                         alt={recentWin.title}
@@ -422,10 +430,16 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                           marginBottom: '8px',
                         }}
                       />
-                      <Typography variant="subtitle2" gutterBottom>
+                      <Typography variant="subtitle2" gutterBottom sx={{
+                        color: 'primary.contrastText',
+                        fontWeight: 600,
+                      }}>
                         {recentWin.title}
                       </Typography>
-                      <Typography variant="caption">
+                      <Typography variant="caption" sx={{
+                        color: 'text.secondary',
+                        display: 'block',
+                      }}>
                         {formatDistanceToNow(new Date(recentWin.createdAt), { addSuffix: true })}
                       </Typography>
                     </Paper>
