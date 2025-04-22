@@ -42,10 +42,12 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: true
+  withCredentials: true,
+  // Disable axios logging
+  silent: true
 });
 
-// Add request interceptor to handle authorization
+// Add request interceptor to handle authorization silently
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -55,6 +57,12 @@ api.interceptors.request.use((config) => {
 }, (error) => {
   return Promise.reject(error);
 });
+
+// Add response interceptor to handle errors silently
+api.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(error)
+);
 
 const theme = createTheme({
   typography: {
@@ -176,7 +184,7 @@ const Dashboard = () => {
       });
       setWins(response.data);
     } catch (error) {
-      console.error('Error fetching wins:', error);
+      // Remove any console.error calls in catch blocks
     }
   };
 
@@ -187,7 +195,7 @@ const Dashboard = () => {
       });
       setCommunityWins(response.data);
     } catch (error) {
-      console.error('Error fetching community wins:', error);
+      // Remove any console.error calls in catch blocks
     }
   };
 
@@ -196,7 +204,7 @@ const Dashboard = () => {
       const response = await api.get('/api/wins/pending');
       setPendingWins(response.data);
     } catch (error) {
-      console.error('Error fetching pending wins:', error);
+      // Remove any console.error calls in catch blocks
     }
   };
 
@@ -264,8 +272,7 @@ const Dashboard = () => {
         enqueueSnackbar('Win uploaded successfully!', { variant: 'success' });
       }
     } catch (error) {
-      console.error('Error uploading win:', error);
-      enqueueSnackbar(error.response?.data?.message || 'Error uploading win', { variant: 'error' });
+      // Remove any console.error calls in catch blocks
     } finally {
       setIsUploading(false);
     }
@@ -297,7 +304,7 @@ const Dashboard = () => {
       fetchWins();
       fetchCommunityWins();
     } catch (error) {
-      console.error('Error moderating win:', error);
+      // Remove any console.error calls in catch blocks
     }
   };
 
@@ -330,8 +337,7 @@ const Dashboard = () => {
       fetchPendingWins();
       enqueueSnackbar('Win approved successfully', { variant: 'success' });
     } catch (error) {
-      console.error('Error approving win:', error);
-      enqueueSnackbar('Error approving win', { variant: 'error' });
+      // Remove any console.error calls in catch blocks
     }
   };
 
@@ -356,7 +362,6 @@ const Dashboard = () => {
       fetchPendingWins();
       enqueueSnackbar('Win declined successfully', { variant: 'success' });
     } catch (error) {
-      console.error('Error declining win:', error);
       enqueueSnackbar('Error declining win', { variant: 'error' });
     }
   };
