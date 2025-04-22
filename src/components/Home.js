@@ -96,6 +96,7 @@ const BACKEND_URL = process.env.REACT_APP_API_URL;
 
 // Helper function to get image URL
 const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return null;
   if (imageUrl.startsWith('http')) {
     return imageUrl;
   }
@@ -683,7 +684,7 @@ const Home = () => {
                     }}
                   >
                     <Avatar
-                      src={JSON.parse(localStorage.getItem('user') || '{}').profilePicture}
+                      src={getImageUrl(JSON.parse(localStorage.getItem('user') || '{}').profilePicture)}
                       sx={{ 
                         width: 32, 
                         height: 32,
