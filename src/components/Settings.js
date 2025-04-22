@@ -82,11 +82,15 @@ function Settings() {
         },
       });
 
-      setUser(response.data.user);
-      // Update token in localStorage
+      const updatedUser = response.data.user;
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
       }
+      
+      setPreviewUrl(getImageUrl(updatedUser.profilePicture));
       setSuccess('Profile updated successfully!');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update profile');
