@@ -120,7 +120,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
             onClick={handleOpenUserProfile}
           >
             <Avatar
-              src={getImageUrl(win.userProfilePic)}
+              src={win.userProfilePic}
               alt={win.createdBy}
               sx={{ 
                 width: 40, 
@@ -129,6 +129,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                 border: '2px solid',
                 borderColor: 'primary.main',
                 boxShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
+                bgcolor: 'hsla(220, 73%, 63%, 0.2)',
               }}
             />
             <Box>
