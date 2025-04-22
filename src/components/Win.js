@@ -38,17 +38,12 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
     
-    // Check if it's an absolute URL (starts with http:// or https://)
+    // If it's a Discord avatar URL or any other complete URL, return it as is
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
     
-    // Check if it's a full backend URL without protocol
-    if (imageUrl.startsWith(process.env.REACT_APP_BACKEND_URL.replace(/^https?:\/\//, ''))) {
-      return `https://${imageUrl}`;
-    }
-    
-    // Handle relative paths by prepending the API URL
+    // For relative paths from our backend
     return `${process.env.REACT_APP_BACKEND_URL}${imageUrl}`;
   };
 
