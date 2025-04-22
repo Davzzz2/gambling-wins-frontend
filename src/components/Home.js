@@ -699,7 +699,7 @@ const Home = () => {
                     }}
                   >
                     <Avatar
-                      src={getImageUrl(JSON.parse(localStorage.getItem('user') || '{}').profilePicture)}
+                      src={JSON.parse(localStorage.getItem('user') || '{}').profilePicture || '/default-avatar.png'}
                       sx={{ 
                         width: 32, 
                         height: 32,
