@@ -1,131 +1,158 @@
-import CryptoJS from 'crypto-js';
+import axios from 'axios';
 
-const ENCRYPTION_KEY = process.env.REACT_APP_ENCRYPTION_KEY || 'your-fallback-key';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
-class ApiService {
-  constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL;
-    this.headers = {
-      'Content-Type': 'application/json',
-      'X-Client-Version': '1.0',
-      'X-Request-Time': '',
-    };
-  }
+// Create axios instance with default config
+const axiosInstance = axios.create({
+  baseURL: BACKEND_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-  // Add security headers and encrypt sensitive data
-  async prepareRequest(endpoint, options = {}) {
-    const timestamp = Date.now().toString();
+// Request interceptor for API calls
+axiosInstance.interceptors.request.use(
+  (config) => {
     const token = localStorage.getItem('token');
-
-    // Add security headers
-    const headers = {
-      ...this.headers,
-      'X-Request-Time': timestamp,
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    };
-
-    // Add request signature
-    const signature = this.generateRequestSignature(endpoint, timestamp);
-    headers['X-Request-Signature'] = signature;
-
-    return {
-      ...options,
-      headers,
-      credentials: 'include',
-    };
-  }
-
-  // Generate a unique signature for each request
-  generateRequestSignature(endpoint, timestamp) {
-    const dataToSign = `${endpoint}:${timestamp}`;
-    return CryptoJS.HmacSHA256(dataToSign, ENCRYPTION_KEY).toString();
-  }
-
-  // Encrypt sensitive data
-  encryptData(data) {
-    if (!data) return data;
-    return CryptoJS.AES.encrypt(JSON.stringify(data), ENCRYPTION_KEY).toString();
-  }
-
-  // Decrypt response data
-  decryptData(encryptedData) {
-    if (!encryptedData) return encryptedData;
-    const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
-    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-  }
-
-  // Generic request method
-  async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
-    const secureOptions = await this.prepareRequest(endpoint, options);
-
-    try {
-      const response = await fetch(url, secureOptions);
-      
-      // Handle rate limiting
-      if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After');
-        throw new Error(`Rate limit exceeded. Try again in ${retryAfter} seconds.`);
-      }
-
-      // Handle unauthorized access
-      if (response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-        throw new Error('Unauthorized access');
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      // Handle errors silently in production
-      if (process.env.NODE_ENV !== 'development') {
-        console.clear();
-      }
-      throw error;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
+);
 
-  // API methods
-  async login(credentials) {
-    const encryptedData = this.encryptData(credentials);
-    return this.request('/api/login', {
-      method: 'POST',
-      body: JSON.stringify({ data: encryptedData }),
+// Response interceptor for API calls
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle token expiration
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      // Clear auth state on token expiration
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      
+      return Promise.reject(error);
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// Cache for API responses
+const cache = new Map();
+
+export const api = {
+  // Auth methods
+  async login(username, password) {
+    const response = await axiosInstance.post('/api/auth/login', {
+      username,
+      password,
     });
-  }
+    
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    
+    return response.data;
+  },
 
-  async getWins(type) {
-    return this.request(`/api/wins?type=${type}`);
-  }
+  async logout() {
+    try {
+      await axiosInstance.post('/api/auth/logout');
+    } finally {
+      this.clearCache();
+    }
+  },
 
-  async createWin(formData) {
-    return this.request('/api/wins', {
-      method: 'POST',
-      body: formData,
-    });
-  }
+  async verifyToken() {
+    try {
+      const response = await axiosInstance.get('/api/auth/verify');
+      return response.status === 200;
+    } catch {
+      return false;
+    }
+  },
 
-  async moderateWin(winId, status, comment) {
-    const encryptedComment = this.encryptData(comment);
-    return this.request(`/api/wins/${winId}/moderate`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        status,
-        moderationComment: encryptedComment,
-      }),
-    });
-  }
-
+  // User methods
   async getUserProfile(username) {
-    return this.request(`/api/users/${username}`);
-  }
+    const cacheKey = `profile_${username}`;
+    if (cache.has(cacheKey)) {
+      return cache.get(cacheKey);
+    }
 
-  async getNotifications() {
-    return this.request('/api/notifications');
-  }
-}
+    const response = await axiosInstance.get(`/api/users/${username}`);
+    cache.set(cacheKey, response.data);
+    return response.data;
+  },
 
-export const api = new ApiService(); 
+  // Win methods
+  async getWins(type = null) {
+    const cacheKey = `wins_${type || 'all'}`;
+    if (cache.has(cacheKey)) {
+      return cache.get(cacheKey);
+    }
+
+    const params = type ? { type } : {};
+    const response = await axiosInstance.get('/api/wins', { params });
+    cache.set(cacheKey, response.data);
+    return response.data;
+  },
+
+  async createWin(winData) {
+    const response = await axiosInstance.post('/api/wins', winData);
+    this.clearCache();
+    return response.data;
+  },
+
+  async updateWin(winId, updates) {
+    const response = await axiosInstance.put(`/api/wins/${winId}`, updates);
+    this.clearCache();
+    return response.data;
+  },
+
+  async deleteWin(winId) {
+    const response = await axiosInstance.delete(`/api/wins/${winId}`);
+    this.clearCache();
+    return response.data;
+  },
+
+  // Cache management
+  clearCache() {
+    cache.clear();
+  },
+
+  // Error handling
+  handleError(error) {
+    if (error.response) {
+      // Server responded with error
+      return {
+        status: error.response.status,
+        message: error.response.data.message || 'An error occurred',
+      };
+    } else if (error.request) {
+      // Request made but no response
+      return {
+        status: 0,
+        message: 'No response from server',
+      };
+    } else {
+      // Request setup error
+      return {
+        status: -1,
+        message: error.message || 'Request failed',
+      };
+    }
+  },
+};
+
+export default api; 
