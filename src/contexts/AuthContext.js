@@ -1,114 +1,96 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
 
-export const AuthContext = createContext(null);
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [lastTokenCheck, setLastTokenCheck] = useState(0);
 
-  // Initialize auth state from secure storage
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
-
-        if (token && storedUser) {
-          const userData = JSON.parse(storedUser);
-          
+    // Check for existing auth on mount
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (token && storedUser) {
+        try {
           // Verify token is still valid
           const isValid = await api.verifyToken();
           if (isValid) {
+            const userData = JSON.parse(storedUser);
             setUser(userData);
+            setIsAuthenticated(true);
+            setIsAdmin(userData.role === 'admin');
           } else {
-            // Clear invalid auth state
-            handleLogout();
+            // Token is invalid, clear auth state
+            logout();
           }
+        } catch (error) {
+          console.error('Error verifying auth:', error);
+          logout();
         }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        handleLogout();
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     };
 
-    initializeAuth();
+    initAuth();
   }, []);
 
   // Periodic token validation
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const validateToken = async () => {
       try {
-        const now = Date.now();
-        // Check token every 5 minutes
-        if (now - lastTokenCheck > 5 * 60 * 1000) {
-          const isValid = await api.verifyToken();
-          if (!isValid) {
-            handleLogout();
-          }
-          setLastTokenCheck(now);
+        const isValid = await api.verifyToken();
+        if (!isValid) {
+          logout();
         }
       } catch (error) {
         console.error('Token validation error:', error);
-        handleLogout();
+        logout();
       }
     };
 
-    if (user) {
-      const interval = setInterval(validateToken, 60 * 1000); // Check every minute
-      return () => clearInterval(interval);
-    }
-  }, [user, lastTokenCheck]);
+    const interval = setInterval(validateToken, 5 * 60 * 1000); // Check every 5 minutes
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
-  const login = useCallback(async (userData) => {
+  const login = async (userData) => {
     try {
       setUser(userData);
-      // Additional security measures handled by api service
+      setIsAuthenticated(true);
+      setIsAdmin(userData.role === 'admin');
     } catch (error) {
-      console.error('Login error:', error);
-      handleLogout();
+      console.error('Error in login:', error);
+      throw error;
     }
-  }, []);
+  };
 
-  const handleLogout = useCallback(() => {
-    // Clear auth state
-    setUser(null);
-    
-    // Clear secure storage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.clear();
-    
-    // Clear any cached API data
-    api.clearCache();
-    
-    // Invalidate token on server
+  const logout = () => {
     try {
       api.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Error in logout:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsAdmin(false);
     }
-  }, []);
-
-  const updateUser = useCallback((updates) => {
-    setUser(prev => {
-      const updated = { ...prev, ...updates };
-      localStorage.setItem('user', JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+  };
 
   const value = {
+    isAuthenticated,
+    isAdmin,
     user,
-    loading,
     login,
-    logout: handleLogout,
-    updateUser,
-    isAdmin: user?.role === 'admin',
-    isAuthenticated: !!user,
+    logout,
+    loading
   };
 
   if (loading) {
@@ -122,4 +104,12 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export default AuthProvider; 
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export default AuthContext; 
