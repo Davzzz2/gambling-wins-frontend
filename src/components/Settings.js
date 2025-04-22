@@ -54,9 +54,9 @@ function Settings() {
     if (user) {
       setUsername(user.username);
       // If profile picture is a full URL, use it directly
-      const pictureUrl = user.profilePicture?.startsWith('http') 
-        ? user.profilePicture 
-        : user.profilePicture ? `${BACKEND_URL}${user.profilePicture}` : null;
+      const pictureUrl = user.profilepicture?.startsWith('http') 
+        ? user.profilepicture 
+        : user.profilepicture ? `${BACKEND_URL}${user.profilepicture}` : null;
       setPreviewUrl(pictureUrl);
       
       if (user.lastUsernameChange) {
@@ -90,7 +90,7 @@ function Settings() {
         formData.append('username', username);
       }
       if (profilePicture) {
-        formData.append('profilePicture', profilePicture);
+        formData.append('profilepicture', profilePicture);
       }
 
       const response = await api.put('/api/users/settings', formData, {
@@ -108,9 +108,9 @@ function Settings() {
       }
       
       // If profile picture is a full URL, use it directly
-      const pictureUrl = updatedUser.profilePicture?.startsWith('http') 
-        ? updatedUser.profilePicture 
-        : updatedUser.profilePicture ? `${BACKEND_URL}${updatedUser.profilePicture}` : null;
+      const pictureUrl = updatedUser.profilepicture?.startsWith('http') 
+        ? updatedUser.profilepicture 
+        : updatedUser.profilepicture ? `${BACKEND_URL}${updatedUser.profilepicture}` : null;
       setPreviewUrl(pictureUrl);
       
       setSuccess('Profile updated successfully!');
