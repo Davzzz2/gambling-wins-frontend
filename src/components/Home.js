@@ -405,12 +405,33 @@ const Home = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userProfileLoading, setUserProfileLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('user') || '{}');
-    } catch (error) {
-      return {};
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        return null;
+      }
     }
+    return null;
   });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          setCurrentUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -706,8 +727,8 @@ const Home = () => {
                     }}
                   >
                     <Avatar
-                      src={currentUser.profilePicture}
-                      alt={currentUser.username}
+                      src={currentUser?.profilePicture}
+                      alt={currentUser?.username}
                       sx={{ 
                         width: 32, 
                         height: 32,
