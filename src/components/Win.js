@@ -31,10 +31,12 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: true
+  withCredentials: true,
+  // Disable axios logging
+  silent: true
 });
 
-// Add request interceptor to handle authorization
+// Add request interceptor to handle authorization silently
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -44,6 +46,12 @@ api.interceptors.request.use((config) => {
 }, (error) => {
   return Promise.reject(error);
 });
+
+// Add response interceptor to handle errors silently
+api.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(error)
+);
 
 const Win = ({ win, onApprove, onReject, isPending = false }) => {
   const [open, setOpen] = useState(false);
