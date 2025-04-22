@@ -404,6 +404,13 @@ const Home = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userProfileLoading, setUserProfileLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch (error) {
+      return {};
+    }
+  });
 
   const handleLogout = () => {
     logout();
@@ -699,11 +706,8 @@ const Home = () => {
                     }}
                   >
                     <Avatar
-                      src={(() => {
-                        const user = JSON.parse(localStorage.getItem('user') || '{}');
-                        return user.profilePicture || null;
-                      })()}
-                      alt={JSON.parse(localStorage.getItem('user') || '{}').username || 'User'}
+                      src={currentUser.profilePicture}
+                      alt={currentUser.username}
                       sx={{ 
                         width: 32, 
                         height: 32,
