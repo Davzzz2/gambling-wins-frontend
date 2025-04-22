@@ -699,12 +699,19 @@ const Home = () => {
                     }}
                   >
                     <Avatar
-                      src={JSON.parse(localStorage.getItem('user') || '{}').profilePicture || '/default-avatar.png'}
+                      src={(() => {
+                        const user = JSON.parse(localStorage.getItem('user') || '{}');
+                        return user.profilePicture || null;
+                      })()}
+                      alt={JSON.parse(localStorage.getItem('user') || '{}').username || 'User'}
                       sx={{ 
                         width: 32, 
                         height: 32,
+                        bgcolor: 'hsla(220, 73%, 63%, 0.2)',
                       }}
-                    />
+                    >
+                      <AccountCircleIcon />
+                    </Avatar>
                   </IconButton>
                   <Menu
                     anchorEl={anchorEl}
