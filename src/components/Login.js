@@ -21,8 +21,19 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: true
+  withCredentials: true,
+  // Disable axios logging
+  silent: true
 });
+
+// Add response interceptor to silently handle errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Silently handle the error and pass it to the catch block
+    return Promise.reject(error);
+  }
+);
 
 const Login = () => {
   const navigate = useNavigate();
@@ -71,7 +82,6 @@ const Login = () => {
         navigate('/');
       }, 1000);
     } catch (error) {
-      console.error('Login error:', error);
       setError(error.response?.data?.message || 'Failed to login');
     } finally {
       setLoading(false);
