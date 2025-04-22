@@ -10,20 +10,33 @@ import {
   CircularProgress,
   Alert,
   FormHelperText,
+  Stack,
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
+import { Link } from 'react-router-dom';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const BACKEND_URL = process.env.REACT_APP_API_URL;
 
-const getImageUrl = (imageUrl) => {
-  if (!imageUrl) return null;
-  if (imageUrl.startsWith('http')) {
-    return imageUrl;
+// Create axios instance with base URL
+const api = axios.create({
+  baseURL: BACKEND_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  withCredentials: true
+});
+
+// Add request interceptor to handle authorization silently
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return `${BACKEND_URL}${imageUrl}`;
-};
+  return config;
+}, (error) => Promise.reject(error));
 
 function Settings() {
   const { user, setUser } = useAuth();
@@ -40,7 +53,12 @@ function Settings() {
   useEffect(() => {
     if (user) {
       setUsername(user.username);
-      setPreviewUrl(getImageUrl(user.profilePicture));
+      // If profile picture is a full URL, use it directly
+      const pictureUrl = user.profilePicture?.startsWith('http') 
+        ? user.profilePicture 
+        : user.profilePicture ? `${BACKEND_URL}${user.profilePicture}` : null;
+      setPreviewUrl(pictureUrl);
+      
       if (user.lastUsernameChange) {
         const lastChange = new Date(user.lastUsernameChange);
         const daysSinceChange = Math.floor((new Date() - lastChange) / (1000 * 60 * 60 * 24));
@@ -75,10 +93,9 @@ function Settings() {
         formData.append('profilePicture', profilePicture);
       }
 
-      const response = await axios.put(`${BACKEND_URL}/api/users/settings`, formData, {
+      const response = await api.put('/api/users/settings', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
 
@@ -90,7 +107,12 @@ function Settings() {
         localStorage.setItem('token', response.data.token);
       }
       
-      setPreviewUrl(getImageUrl(updatedUser.profilePicture));
+      // If profile picture is a full URL, use it directly
+      const pictureUrl = updatedUser.profilePicture?.startsWith('http') 
+        ? updatedUser.profilePicture 
+        : updatedUser.profilePicture ? `${BACKEND_URL}${updatedUser.profilePicture}` : null;
+      setPreviewUrl(pictureUrl);
+      
       setSuccess('Profile updated successfully!');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update profile');
@@ -115,6 +137,23 @@ function Settings() {
       }}
     >
       <Container maxWidth="sm">
+        <Button
+          component={Link}
+          to="/"
+          startIcon={<ArrowBackIcon />}
+          sx={{
+            mb: 3,
+            color: 'white',
+            borderColor: 'hsl(220, 73%, 63%)',
+            '&:hover': {
+              borderColor: 'hsl(220, 73%, 73%)',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            },
+          }}
+        >
+          Back to Home
+        </Button>
+
         <Paper
           elevation={3}
           sx={{
