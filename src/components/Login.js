@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { AuthContext } from '../context/AuthContext';
+import { api } from '../services/api';
 import {
   Container,
   Paper,
@@ -14,34 +15,30 @@ import {
   Snackbar,
 } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
-import axios from 'axios';
+import { styled } from '@mui/system';
 
-const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  withCredentials: true,
-  // Disable axios logging
-  silent: true
+const StyledContainer = styled(Container)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '100vh',
+  padding: '20px',
 });
 
-// Add response interceptor to silently handle errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Silently handle the error and pass it to the catch block
-    return Promise.reject(error);
-  }
-);
+const StyledForm = styled('form')({
+  width: '100%',
+  maxWidth: '400px',
+  marginTop: '1rem',
+});
 
 const Login = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeUsername, setWelcomeUsername] = useState('');
   const [snackbar, setSnackbar] = useState({
@@ -50,41 +47,66 @@ const Login = () => {
     severity: 'success'
   });
 
+  // Clear any stored sensitive data on component mount
+  React.useEffect(() => {
+    if (!localStorage.getItem('token')) {
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    if (isLoading) return;
 
     try {
-      const response = await api.post('/api/login', {
-        username,
-        password
-      });
+      setIsLoading(true);
+      setError('');
 
-      const { token, user } = response.data;
+      // Add rate limiting on client side
+      const lastAttempt = sessionStorage.getItem('lastLoginAttempt');
+      const now = Date.now();
+      if (lastAttempt && now - parseInt(lastAttempt) < 2000) {
+        throw new Error('Please wait before trying again');
+      }
+      sessionStorage.setItem('lastLoginAttempt', now.toString());
+
+      const response = await api.login({ username, password });
       
-      // Store token and user info
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-
-      // Update auth context
-      login(user);
-
-      // Configure default headers for future requests
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      setSnackbar({
-        open: true,
-        message: 'Login successful!',
-        severity: 'success'
-      });
-      setTimeout(() => {
-        navigate('/');
-      }, 1000);
+      if (response.token && response.user) {
+        // Store token securely
+        localStorage.setItem('token', response.token);
+        
+        // Store minimal user data
+        const safeUserData = {
+          id: response.user.id,
+          username: response.user.username,
+          role: response.user.role,
+        };
+        localStorage.setItem('user', JSON.stringify(safeUserData));
+        
+        // Update auth context
+        login(response.user);
+        
+        // Clear sensitive form data
+        setUsername('');
+        setPassword('');
+        
+        setSnackbar({
+          open: true,
+          message: 'Login successful!',
+          severity: 'success'
+        });
+        setTimeout(() => {
+          navigate('/');
+        }, 1000);
+      }
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to login');
+      setError('Invalid credentials');
+      // Clear password field on error
+      setPassword('');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -93,122 +115,71 @@ const Login = () => {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: `
-          radial-gradient(circle at 20% 20%, hsla(220, 73%, 63%, 0.4) 0%, transparent 50%),
-          radial-gradient(circle at 80% 80%, hsla(220, 73%, 63%, 0.4) 0%, transparent 50%),
-          radial-gradient(circle at 50% 50%, hsla(220, 70%, 8%, 1) 0%, hsla(220, 70%, 12%, 1) 100%)
-        `,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper
+    <StyledContainer>
+      <Typography component="h1" variant="h4" gutterBottom>
+        Login
+      </Typography>
+      <StyledForm onSubmit={handleSubmit} autoComplete="off">
+        <Box mb={2}>
+          <TextField
+            fullWidth
+            label="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={isLoading}
+            autoComplete="username"
+            inputProps={{
+              maxLength: 50,
+              autoCapitalize: 'none',
+            }}
+          />
+        </Box>
+        <Box mb={2}>
+          <TextField
+            fullWidth
+            type="password"
+            label="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
+            autoComplete="current-password"
+            inputProps={{
+              maxLength: 100,
+            }}
+          />
+        </Box>
+        {error && (
+          <Typography color="error" variant="body2" gutterBottom>
+            {error}
+          </Typography>
+        )}
+        <Button
+          fullWidth
+          variant="contained"
+          color="primary"
+          type="submit"
+          disabled={isLoading || !username || !password}
+        >
+          {isLoading ? 'Logging in...' : 'Login'}
+        </Button>
+      </StyledForm>
+      <Box sx={{ mt: 2, textAlign: 'center' }}>
+        <Typography
+          variant="body2"
           sx={{
-            p: 4,
-            backgroundColor: 'hsla(220, 70%, 12%, 0.8)',
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'hsl(220, 73%, 63%)',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 0 30px hsla(220, 73%, 63%, 0.3)',
+            color: 'hsl(220, 89%, 99%)',
+            '& a': {
+              color: 'hsl(220, 73%, 63%)',
+              textDecoration: 'none',
+              '&:hover': {
+                textDecoration: 'underline',
+              },
+            },
           }}
         >
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <LoginIcon
-              sx={{
-                fontSize: 48,
-                color: 'hsl(220, 73%, 63%)',
-                mb: 2,
-                filter: 'drop-shadow(0 0 10px hsla(220, 73%, 63%, 0.5))',
-              }}
-            />
-            <Typography
-              variant="h4"
-              sx={{
-                color: 'hsl(220, 89%, 99%)',
-                fontWeight: 700,
-                textShadow: '0 0 15px hsla(220, 73%, 63%, 0.6)',
-              }}
-            >
-              Login
-            </Typography>
-          </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label="Username"
-              name="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Password"
-              name="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              sx={{ mb: 3 }}
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={loading}
-              sx={{
-                py: 1.5,
-                backgroundColor: 'hsl(220, 73%, 63%)',
-                fontWeight: 600,
-                '&:hover': {
-                  backgroundColor: 'hsl(220, 73%, 53%)',
-                },
-              }}
-            >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                'Login'
-              )}
-            </Button>
-
-            <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: 'hsl(220, 89%, 99%)',
-                  '& a': {
-                    color: 'hsl(220, 73%, 63%)',
-                    textDecoration: 'none',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    },
-                  },
-                }}
-              >
-                Don't have an account? <Link to="/register">Register here</Link>
-              </Typography>
-            </Box>
-          </Box>
-        </Paper>
-      </Container>
+          Don't have an account? <Link to="/register">Register here</Link>
+        </Typography>
+      </Box>
 
       <Snackbar
         open={snackbar.open}
@@ -232,7 +203,7 @@ const Login = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </StyledContainer>
   );
 };
 
