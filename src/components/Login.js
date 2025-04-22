@@ -4,14 +4,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import {
   Container,
-  Paper,
   Typography,
   TextField,
   Button,
   Box,
   Alert,
   CircularProgress,
-  Slide,
+  Paper,
   Snackbar,
 } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
@@ -24,12 +23,57 @@ const StyledContainer = styled(Container)({
   justifyContent: 'center',
   minHeight: '100vh',
   padding: '20px',
+  background: 'linear-gradient(135deg, hsla(220, 100%, 8%, 0.95) 0%, hsla(220, 100%, 2%, 0.95) 100%)',
+});
+
+const StyledPaper = styled(Paper)({
+  padding: '2rem',
+  width: '100%',
+  maxWidth: '400px',
+  background: 'linear-gradient(135deg, hsla(220, 70%, 15%, 0.95) 0%, hsla(220, 70%, 10%, 0.95) 100%)',
+  backdropFilter: 'blur(10px)',
+  border: '1px solid hsla(220, 73%, 63%, 0.2)',
+  borderRadius: '16px',
+  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
 });
 
 const StyledForm = styled('form')({
   width: '100%',
-  maxWidth: '400px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '1rem',
+});
+
+const StyledTextField = styled(TextField)({
+  '& .MuiOutlinedInput-root': {
+    '& fieldset': {
+      borderColor: 'hsla(220, 73%, 63%, 0.3)',
+    },
+    '&:hover fieldset': {
+      borderColor: 'hsla(220, 73%, 63%, 0.5)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: 'hsl(220, 73%, 63%)',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: 'hsla(220, 100%, 95%, 0.8)',
+  },
+  '& .MuiInputBase-input': {
+    color: 'hsl(220, 100%, 95%)',
+  },
+});
+
+const StyledButton = styled(Button)({
   marginTop: '1rem',
+  padding: '0.8rem',
+  background: 'linear-gradient(135deg, hsl(220, 73%, 63%) 0%, hsl(220, 73%, 56%) 100%)',
+  '&:hover': {
+    background: 'linear-gradient(135deg, hsl(220, 73%, 56%) 0%, hsl(220, 73%, 50%) 100%)',
+  },
+  '&:disabled': {
+    background: 'hsla(220, 73%, 63%, 0.3)',
+  },
 });
 
 const Login = () => {
@@ -39,8 +83,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [welcomeUsername, setWelcomeUsername] = useState('');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -103,7 +145,6 @@ const Login = () => {
       }
     } catch (error) {
       setError('Invalid credentials');
-      // Clear password field on error
       setPassword('');
     } finally {
       setIsLoading(false);
@@ -115,13 +156,27 @@ const Login = () => {
   };
 
   return (
-    <StyledContainer>
-      <Typography component="h1" variant="h4" gutterBottom>
-        Login
-      </Typography>
-      <StyledForm onSubmit={handleSubmit} autoComplete="off">
-        <Box mb={2}>
-          <TextField
+    <StyledContainer maxWidth={false}>
+      <StyledPaper elevation={3}>
+        <Box sx={{ mb: 3, textAlign: 'center' }}>
+          <LoginIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+          <Typography 
+            component="h1" 
+            variant="h4" 
+            sx={{ 
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, hsl(220, 100%, 90%), hsl(220, 73%, 63%))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 2px 10px rgba(0,0,0,0.2)',
+            }}
+          >
+            Welcome Back
+          </Typography>
+        </Box>
+
+        <StyledForm onSubmit={handleSubmit} autoComplete="off">
+          <StyledTextField
             fullWidth
             label="Username"
             value={username}
@@ -133,9 +188,7 @@ const Login = () => {
               autoCapitalize: 'none',
             }}
           />
-        </Box>
-        <Box mb={2}>
-          <TextField
+          <StyledTextField
             fullWidth
             type="password"
             label="Password"
@@ -147,39 +200,54 @@ const Login = () => {
               maxLength: 100,
             }}
           />
-        </Box>
-        {error && (
-          <Typography color="error" variant="body2" gutterBottom>
-            {error}
-          </Typography>
-        )}
-        <Button
-          fullWidth
-          variant="contained"
-          color="primary"
-          type="submit"
-          disabled={isLoading || !username || !password}
-        >
-          {isLoading ? 'Logging in...' : 'Login'}
-        </Button>
-      </StyledForm>
-      <Box sx={{ mt: 2, textAlign: 'center' }}>
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'hsl(220, 89%, 99%)',
-            '& a': {
-              color: 'hsl(220, 73%, 63%)',
-              textDecoration: 'none',
-              '&:hover': {
-                textDecoration: 'underline',
-              },
-            },
-          }}
-        >
-          Don't have an account? <Link to="/register">Register here</Link>
-        </Typography>
-      </Box>
+
+          {error && (
+            <Typography 
+              color="error" 
+              variant="body2" 
+              sx={{ 
+                textAlign: 'center',
+                padding: '0.5rem',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(211, 47, 47, 0.1)',
+              }}
+            >
+              {error}
+            </Typography>
+          )}
+
+          <StyledButton
+            fullWidth
+            variant="contained"
+            type="submit"
+            disabled={isLoading || !username || !password}
+            startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <LoginIcon />}
+          >
+            {isLoading ? 'Logging in...' : 'Login'}
+          </StyledButton>
+
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'hsla(220, 100%, 95%, 0.7)',
+                '& a': {
+                  color: 'hsl(220, 73%, 63%)',
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    color: 'hsl(220, 73%, 70%)',
+                    textDecoration: 'underline',
+                  },
+                },
+              }}
+            >
+              Don't have an account? <Link to="/register">Register here</Link>
+            </Typography>
+          </Box>
+        </StyledForm>
+      </StyledPaper>
 
       <Snackbar
         open={snackbar.open}
@@ -192,7 +260,7 @@ const Login = () => {
           severity={snackbar.severity}
           sx={{ 
             width: '100%',
-            backgroundColor: 'hsla(120, 73%, 75%, 0.9)',
+            backgroundColor: 'hsla(120, 73%, 75%, 0.95)',
             backdropFilter: 'blur(10px)',
             color: '#000',
             '& .MuiAlert-icon': {
