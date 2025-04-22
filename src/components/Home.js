@@ -57,15 +57,25 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { formatDistanceToNow, format } from 'date-fns';
 
+// Backend URL for images
+const BACKEND_URL = process.env.REACT_APP_API_URL;
+
+// Helper function to get image URL
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return '/default-avatar.png';  // Return default avatar if no image
+  if (imageUrl.startsWith('http') || imageUrl.startsWith('data:')) {
+    return imageUrl;
+  }
+  return `${BACKEND_URL}${imageUrl}`;
+};
+
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: true,
-  // Disable axios logging
-  silent: true
+  withCredentials: true
 });
 
 // Add request interceptor to handle authorization silently
@@ -75,33 +85,20 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+}, (error) => Promise.reject(error));
 
 // Add response interceptor to handle errors silently
-api.interceptors.response.use((response) => {
-  return response;
-}, (error) => {
-  if (error.response?.status === 401) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
   }
-  return Promise.reject(error);
-});
-
-// Backend URL for images
-const BACKEND_URL = process.env.REACT_APP_API_URL;
-
-// Helper function to get image URL
-const getImageUrl = (imageUrl) => {
-  if (!imageUrl) return null;
-  if (imageUrl.startsWith('http')) {
-    return imageUrl;
-  }
-  return `${BACKEND_URL}${imageUrl}`;
-};
+);
 
 // Create custom theme
 const theme = createTheme({
@@ -406,6 +403,7 @@ const Home = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [userProfileLoading, setUserProfileLoading] = useState(true);
 
   const handleLogout = () => {
     logout();
@@ -595,6 +593,23 @@ const Home = () => {
 
   const handleCloseNotifications = () => {
     setNotificationsOpen(false);
+  };
+
+  const handleOpenUserProfile = async (username) => {
+    try {
+      setUserProfileLoading(true);
+      const response = await api.get(`/api/users/${username}`);
+      setUserProfile(response.data);
+      setUserProfileOpen(true);
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: 'Failed to load user profile',
+        severity: 'error'
+      });
+    } finally {
+      setUserProfileLoading(false);
+    }
   };
 
   return (
@@ -1218,7 +1233,7 @@ const Home = () => {
                           </Typography>
                         </Box>
                       </Box>
-
+                      
                       <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
                         Recent Wins
                       </Typography>
@@ -1226,7 +1241,7 @@ const Home = () => {
                         {userProfile.recentWins.map((recentWin) => (
                           <Grid item xs={12} sm={6} md={4} key={recentWin._id}>
                             <Paper
-                              sx={{
+                              sx={{ 
                                 p: 2,
                                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
                                 borderRadius: 2,
