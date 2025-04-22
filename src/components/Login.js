@@ -113,7 +113,7 @@ const Login = () => {
       }
       sessionStorage.setItem('lastLoginAttempt', now.toString());
 
-      const response = await api.login({ username, password });
+      const response = await api.login(username, password);
       
       if (response.token && response.user) {
         // Store token securely
@@ -121,7 +121,6 @@ const Login = () => {
         
         // Store minimal user data
         const safeUserData = {
-          id: response.user.id,
           username: response.user.username,
           role: response.user.role,
         };
@@ -144,7 +143,8 @@ const Login = () => {
         }, 1000);
       }
     } catch (error) {
-      setError('Invalid credentials');
+      console.error('Login failed:', error);
+      setError(error.response?.data?.message || 'Invalid credentials');
       setPassword('');
     } finally {
       setIsLoading(false);
