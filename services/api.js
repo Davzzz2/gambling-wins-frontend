@@ -1,15 +1,25 @@
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-
 // Create axios instance with default config
 const axiosInstance = axios.create({
-  baseURL: BACKEND_URL,
+  baseURL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Remove URL from error messages
+const sanitizeError = (error) => {
+  if (error.config) {
+    delete error.config.baseURL;
+    delete error.config.url;
+  }
+  if (error.request) {
+    delete error.request.responseURL;
+  }
+  return error;
+};
 
 // Request interceptor for API calls
 axiosInstance.interceptors.request.use(
@@ -21,13 +31,18 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
-    return Promise.reject(error);
+    return Promise.reject(sanitizeError(error));
   }
 );
 
 // Response interceptor for API calls
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Remove sensitive headers and URLs from response
+    delete response.config.baseURL;
+    delete response.config.url;
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 
@@ -39,11 +54,9 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
-      
-      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    return Promise.reject(sanitizeError(error));
   }
 );
 
@@ -53,22 +66,28 @@ const cache = new Map();
 export const api = {
   // Auth methods
   async login(username, password) {
-    const response = await axiosInstance.post('/api/auth/login', {
-      username,
-      password,
-    });
-    
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+    try {
+      const response = await axiosInstance.post('/api/auth/login', {
+        username,
+        password,
+      });
+      
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+      
+      return response.data;
+    } catch (error) {
+      throw sanitizeError(error);
     }
-    
-    return response.data;
   },
 
   async logout() {
     try {
       await axiosInstance.post('/api/auth/logout');
+    } catch (error) {
+      // Ignore logout errors
     } finally {
       this.clearCache();
     }
@@ -78,52 +97,72 @@ export const api = {
     try {
       const response = await axiosInstance.get('/api/auth/verify');
       return response.status === 200;
-    } catch {
+    } catch (error) {
       return false;
     }
   },
 
   // User methods
   async getUserProfile(username) {
-    const cacheKey = `profile_${username}`;
-    if (cache.has(cacheKey)) {
-      return cache.get(cacheKey);
-    }
+    try {
+      const cacheKey = `profile_${username}`;
+      if (cache.has(cacheKey)) {
+        return cache.get(cacheKey);
+      }
 
-    const response = await axiosInstance.get(`/api/users/${username}`);
-    cache.set(cacheKey, response.data);
-    return response.data;
+      const response = await axiosInstance.get(`/api/users/${username}`);
+      cache.set(cacheKey, response.data);
+      return response.data;
+    } catch (error) {
+      throw sanitizeError(error);
+    }
   },
 
   // Win methods
   async getWins(type = null) {
-    const cacheKey = `wins_${type || 'all'}`;
-    if (cache.has(cacheKey)) {
-      return cache.get(cacheKey);
-    }
+    try {
+      const cacheKey = `wins_${type || 'all'}`;
+      if (cache.has(cacheKey)) {
+        return cache.get(cacheKey);
+      }
 
-    const params = type ? { type } : {};
-    const response = await axiosInstance.get('/api/wins', { params });
-    cache.set(cacheKey, response.data);
-    return response.data;
+      const params = type ? { type } : {};
+      const response = await axiosInstance.get('/api/wins', { params });
+      cache.set(cacheKey, response.data);
+      return response.data;
+    } catch (error) {
+      throw sanitizeError(error);
+    }
   },
 
   async createWin(winData) {
-    const response = await axiosInstance.post('/api/wins', winData);
-    this.clearCache();
-    return response.data;
+    try {
+      const response = await axiosInstance.post('/api/wins', winData);
+      this.clearCache();
+      return response.data;
+    } catch (error) {
+      throw sanitizeError(error);
+    }
   },
 
   async updateWin(winId, updates) {
-    const response = await axiosInstance.put(`/api/wins/${winId}`, updates);
-    this.clearCache();
-    return response.data;
+    try {
+      const response = await axiosInstance.put(`/api/wins/${winId}`, updates);
+      this.clearCache();
+      return response.data;
+    } catch (error) {
+      throw sanitizeError(error);
+    }
   },
 
   async deleteWin(winId) {
-    const response = await axiosInstance.delete(`/api/wins/${winId}`);
-    this.clearCache();
-    return response.data;
+    try {
+      const response = await axiosInstance.delete(`/api/wins/${winId}`);
+      this.clearCache();
+      return response.data;
+    } catch (error) {
+      throw sanitizeError(error);
+    }
   },
 
   // Cache management
@@ -133,6 +172,8 @@ export const api = {
 
   // Error handling
   handleError(error) {
+    error = sanitizeError(error);
+    
     if (error.response) {
       // Server responded with error
       return {
@@ -143,13 +184,13 @@ export const api = {
       // Request made but no response
       return {
         status: 0,
-        message: 'No response from server',
+        message: 'Network error occurred',
       };
     } else {
       // Request setup error
       return {
         status: -1,
-        message: error.message || 'Request failed',
+        message: 'Request failed',
       };
     }
   },
