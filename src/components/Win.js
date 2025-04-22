@@ -37,14 +37,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
 
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    
-    // If it's a Discord avatar URL or any other complete URL, return it as is
-    if (imageUrl.startsWith('http')) {
-      return imageUrl;
-    }
-    
-    // For relative paths from our backend
-    return `${process.env.REACT_APP_BACKEND_URL}${imageUrl}`;
+    return imageUrl; // Return the URL as is since it's already a full URL from the database
   };
 
   const handleOpen = () => {
@@ -120,7 +113,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
             onClick={handleOpenUserProfile}
           >
             <Avatar
-              src={getImageUrl(win.userProfilePic)}
+              src={win.userProfilePic}
               alt={win.createdBy}
               sx={{ 
                 width: 40, 
@@ -346,8 +339,8 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
             <Box sx={{ py: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
                 <Avatar
-                  src={getImageUrl(userProfile.profilePicture)}
-                  alt={userProfile.username}
+                  src={userProfile?.profilePicture}
+                  alt={userProfile?.username}
                   sx={{ 
                     width: 80, 
                     height: 80,
@@ -355,6 +348,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                     border: '3px solid',
                     borderColor: 'primary.main',
                     boxShadow: '0 0 20px hsla(220, 73%, 63%, 0.5)',
+                    bgcolor: 'hsla(220, 73%, 63%, 0.2)',
                   }}
                 />
                 <Box>
