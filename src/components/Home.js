@@ -393,7 +393,7 @@ const Home = () => {
     severity: 'success'
   });
   const [imagePreview, setImagePreview] = useState(null);
-  const { isAuthenticated, isAdmin, logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -403,26 +403,24 @@ const Home = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [userProfileLoading, setUserProfileLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-        if (storedUser.username) {
-          const response = await api.get(`/api/users/${storedUser.username}`);
-          setCurrentUser(response.data);
-        }
+        const response = await api.get(`/api/users/${authUser.username}`);
+        setCurrentUser(response.data);
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        if (error.response?.status === 401) {
+          logout();
+        }
       }
     };
 
-    if (isAuthenticated) {
+    if (authUser) {
       fetchUserData();
     }
-  }, [isAuthenticated]);
+  }, [authUser, logout]);
 
   const handleLogout = () => {
     logout();
@@ -450,7 +448,7 @@ const Home = () => {
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
-      if (isAuthenticated && !isAdmin) {
+      if (authUser && !authUser.isAdmin) {
         try {
           const token = localStorage.getItem('token');
           const response = await api.get('/api/notifications/unread/count', {
@@ -469,7 +467,7 @@ const Home = () => {
     // Poll for new notifications every minute
     const interval = setInterval(fetchUnreadCount, 60000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, isAdmin]);
+  }, [authUser]);
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
@@ -660,9 +658,9 @@ const Home = () => {
               </Typography>
             </Box>
             <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 2, alignItems: 'center' }}>
-              {isAuthenticated ? (
+              {authUser ? (
                 <>
-                  {isAdmin && (
+                  {authUser.isAdmin && (
                     <Button
                       color="inherit"
                       component={Link}
@@ -685,7 +683,7 @@ const Home = () => {
                       Admin
                     </Button>
                   )}
-                  {!isAdmin && (
+                  {!authUser.isAdmin && (
                     <IconButton
                       onClick={handleOpenNotifications}
                       sx={{
@@ -706,23 +704,21 @@ const Home = () => {
                   )}
                   <IconButton
                     onClick={handleProfileClick}
-                    sx={{
-                      p: 0.5,
-                      border: '2px solid',
-                      borderColor: 'primary.main',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 0 20px hsla(220, 73%, 63%, 0.5)',
-                      },
-                    }}
+                    size="small"
+                    sx={{ ml: 2 }}
+                    aria-controls={menuOpen ? 'account-menu' : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={menuOpen ? 'true' : undefined}
                   >
                     <Avatar
                       src={currentUser?.profilePicture}
                       alt={currentUser?.username}
-                      sx={{ 
-                        width: 32, 
-                        height: 32,
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        border: '2px solid',
+                        borderColor: 'primary.main',
+                        boxShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
                         bgcolor: 'hsla(220, 73%, 63%, 0.2)',
                       }}
                     />
