@@ -1,6 +1,6 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import {
   Container,
@@ -38,7 +38,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext);
+  const { login } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeUsername, setWelcomeUsername] = useState('');
   const [snackbar, setSnackbar] = useState({
