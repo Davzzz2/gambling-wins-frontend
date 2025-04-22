@@ -63,10 +63,12 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: true
+  withCredentials: true,
+  // Disable axios logging
+  silent: true
 });
 
-// Add request interceptor to handle authorization
+// Add request interceptor to handle authorization silently
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -77,12 +79,11 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// Add response interceptor to handle errors
+// Add response interceptor to handle errors silently
 api.interceptors.response.use((response) => {
   return response;
 }, (error) => {
   if (error.response?.status === 401) {
-    // Handle unauthorized access
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login';
@@ -421,7 +422,6 @@ const Home = () => {
       });
       setWins(response.data);
     } catch (error) {
-      console.error('Error fetching wins:', error);
       showSnackbar('Error loading wins', 'error');
     }
   }, [currentTab]);
@@ -527,7 +527,6 @@ const Home = () => {
       showSnackbar('Win submitted successfully! Waiting for admin approval.');
       fetchWins();
     } catch (error) {
-      console.error('Error submitting win:', error);
       showSnackbar(error.response?.data?.message || 'Error submitting win', 'error');
     }
   };
@@ -589,7 +588,6 @@ const Home = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
       showSnackbar('Error loading notifications', 'error');
     }
   };
