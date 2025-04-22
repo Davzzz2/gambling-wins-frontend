@@ -382,11 +382,15 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                           backgroundColor: 'hsla(220, 73%, 63%, 0.2)',
                           border: '1px solid',
                           borderColor: 'primary.main',
+                          minWidth: 'auto',
                           '& .MuiChip-label': {
                             textShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
                             color: 'white',
                             fontWeight: 600,
-                            letterSpacing: '0.05em'
+                            letterSpacing: '0.05em',
+                            padding: '0 8px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'visible'
                           },
                           '& .MuiSvgIcon-root': {
                             color: 'white',
