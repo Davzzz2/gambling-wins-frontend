@@ -615,7 +615,6 @@ const Home = () => {
 
   const handleOpenUserProfile = async (username) => {
     try {
-      setUserProfileLoading(true);
       const response = await api.get(`/api/users/${username}`);
       setUserProfile(response.data);
       setUserProfileOpen(true);
@@ -625,8 +624,6 @@ const Home = () => {
         message: 'Failed to load user profile',
         severity: 'error'
       });
-    } finally {
-      setUserProfileLoading(false);
     }
   };
 
