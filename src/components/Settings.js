@@ -61,10 +61,10 @@ function Settings() {
           const userData = response.data;
           setUsername(userData.username);
           
-          if (userData.profilepicture) {
-            const fullUrl = userData.profilepicture.startsWith('http') 
-              ? userData.profilepicture 
-              : `${BACKEND_URL}${userData.profilepicture}`;
+          if (userData.profilePicture) {
+            const fullUrl = userData.profilePicture.startsWith('http') 
+              ? userData.profilePicture 
+              : `${BACKEND_URL}${userData.profilePicture}`;
             console.log('Profile picture URL:', fullUrl);
             setPreviewUrl(fullUrl);
           }
@@ -107,7 +107,7 @@ function Settings() {
         formData.append('username', username);
       }
       if (profilePicture) {
-        formData.append('profilepicture', profilePicture);
+        formData.append('profilePicture', profilePicture);
       }
 
       const response = await api.put('/api/users/settings', formData, {
@@ -117,7 +117,7 @@ function Settings() {
       });
 
       const updatedUser = response.data.user;
-      console.log('Updated user data:', updatedUser); // Debug log
+      console.log('Updated user data:', updatedUser);
       
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -127,17 +127,17 @@ function Settings() {
       }
       
       // Simplified profile picture URL handling
-      if (updatedUser.profilepicture) {
-        const fullUrl = updatedUser.profilepicture.startsWith('http') 
-          ? updatedUser.profilepicture 
-          : `${BACKEND_URL}${updatedUser.profilepicture}`;
-        console.log('Updated profile picture URL:', fullUrl); // Debug log
+      if (updatedUser.profilePicture) {
+        const fullUrl = updatedUser.profilePicture.startsWith('http') 
+          ? updatedUser.profilePicture 
+          : `${BACKEND_URL}${updatedUser.profilePicture}`;
+        console.log('Updated profile picture URL:', fullUrl);
         setPreviewUrl(fullUrl);
       }
       
       setSuccess('Profile updated successfully!');
     } catch (err) {
-      console.error('Error updating profile:', err); // Debug log
+      console.error('Error updating profile:', err);
       setError(err.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
