@@ -51,28 +51,40 @@ function Settings() {
   const [daysUntilChange, setDaysUntilChange] = useState(0);
 
   useEffect(() => {
-    if (user) {
-      console.log('User data:', user); // Debug log
-      setUsername(user.username);
-      
-      // Simplified profile picture handling
-      if (user.profilepicture) {
-        const fullUrl = user.profilepicture.startsWith('http') 
-          ? user.profilepicture 
-          : `${BACKEND_URL}${user.profilepicture}`;
-        console.log('Profile picture URL:', fullUrl); // Debug log
-        setPreviewUrl(fullUrl);
+    const fetchUserProfile = async () => {
+      if (user) {
+        try {
+          const response = await api.get(`/api/users/${user.username}`);
+          console.log('Fetched user profile:', response.data);
+          
+          // Update local user data with complete profile
+          const userData = response.data;
+          setUsername(userData.username);
+          
+          if (userData.profilepicture) {
+            const fullUrl = userData.profilepicture.startsWith('http') 
+              ? userData.profilepicture 
+              : `${BACKEND_URL}${userData.profilepicture}`;
+            console.log('Profile picture URL:', fullUrl);
+            setPreviewUrl(fullUrl);
+          }
+          
+          if (userData.lastUsernameChange) {
+            const lastChange = new Date(userData.lastUsernameChange);
+            const daysSinceChange = Math.floor((new Date() - lastChange) / (1000 * 60 * 60 * 24));
+            const canChange = daysSinceChange >= 30;
+            setCanChangeUsername(canChange);
+            setDaysUntilChange(30 - daysSinceChange);
+            setLastUsernameChange(lastChange);
+          }
+        } catch (err) {
+          console.error('Error fetching user profile:', err);
+          setError('Failed to load user profile');
+        }
       }
-      
-      if (user.lastUsernameChange) {
-        const lastChange = new Date(user.lastUsernameChange);
-        const daysSinceChange = Math.floor((new Date() - lastChange) / (1000 * 60 * 60 * 24));
-        const canChange = daysSinceChange >= 30;
-        setCanChangeUsername(canChange);
-        setDaysUntilChange(30 - daysSinceChange);
-        setLastUsernameChange(lastChange);
-      }
-    }
+    };
+
+    fetchUserProfile();
   }, [user]);
 
   const handleFileChange = (event) => {
