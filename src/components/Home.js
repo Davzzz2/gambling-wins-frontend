@@ -707,11 +707,12 @@ const Home = () => {
                       sx={{ 
                         width: 32, 
                         height: 32,
+                        border: '2px solid',
+                        borderColor: 'primary.main',
+                        boxShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
                         bgcolor: 'hsla(220, 73%, 63%, 0.2)',
                       }}
-                    >
-                      <AccountCircleIcon />
-                    </Avatar>
+                    />
                   </IconButton>
                   <Menu
                     anchorEl={anchorEl}
