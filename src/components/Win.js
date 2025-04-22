@@ -1142,85 +1142,143 @@ const Home = () => {
           {/* User Profile Dialog */}
           <Dialog
             open={userProfileOpen}
-            onClose={() => setUserProfileOpen(false)}
+            onClose={handleCloseUserProfile}
             maxWidth="md"
             fullWidth
+            PaperProps={{
+              sx: {
+                backgroundColor: 'background.paper',
+                backgroundImage: 'none',
+                borderRadius: '12px',
+              },
+            }}
           >
-            {userProfileLoading ? (
-              <DialogContent sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                <CircularProgress />
-              </DialogContent>
-            ) : userProfile && (
-              <DialogContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <Avatar
-                    src={getImageUrl(userProfile.profilePicture)}
-                    alt={userProfile.username}
-                    sx={{ 
-                      width: 120, 
-                      height: 120,
-                      border: '3px solid',
-                      borderColor: 'primary.main',
-                      boxShadow: 3
-                    }}
-                  />
-                  <Box sx={{ ml: 3 }}>
-                    <Typography variant="h4" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {userProfile.username}
-                      {userProfile.isAdmin && (
-                        <Tooltip title="Admin">
-                          <AdminPanelSettingsIcon color="primary" />
-                        </Tooltip>
-                      )}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      Joined {format(new Date(userProfile.createdAt), 'MMMM dd, yyyy')}
-                    </Typography>
-                    <Typography variant="body1">
-                      {userProfile.totalUploads} uploads
-                    </Typography>
+            {userProfile ? (
+              <>
+                <DialogTitle>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Typography variant="h6">User Profile</Typography>
+                    </Box>
+                    <IconButton onClick={handleCloseUserProfile}>
+                      <CloseIcon />
+                    </IconButton>
                   </Box>
+                </DialogTitle>
+                <DialogContent>
+                  {userProfile && (
+                    <Box sx={{ py: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+                        <Avatar
+                          src={userProfile.profilePicture}
+                          alt={userProfile.username}
+                          sx={{ 
+                            width: 80, 
+                            height: 80,
+                            mr: 3,
+                            border: '3px solid',
+                            borderColor: 'primary.main',
+                            boxShadow: '0 0 20px hsla(220, 73%, 63%, 0.5)',
+                          }}
+                        />
+                        <Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography 
+                              variant="h5" 
+                              sx={{ 
+                                fontWeight: 700,
+                                color: 'primary.contrastText',
+                                textShadow: '0 0 15px hsla(220, 73%, 63%, 0.6)',
+                              }}
+                            >
+                              {userProfile.username}
+                            </Typography>
+                            {userProfile.badges?.map((badge, index) => (
+                              <Tooltip
+                                key={`${badge.type}-${index}`}
+                                title={badge.description}
+                                placement="right"
+                                arrow
+                              >
+                                <Chip
+                                  label={badge.label}
+                                  color="secondary"
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: 'hsla(220, 73%, 63%, 0.2)',
+                                    border: '1px solid',
+                                    borderColor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    '& .MuiChip-label': {
+                                      textShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
+                                    },
+                                  }}
+                                />
+                              </Tooltip>
+                            ))}
+                            {userProfile.role === 'admin' && (
+                              <Chip
+                                icon={<AdminPanelSettingsIcon />}
+                                label="Admin"
+                                color="primary"
+                                size="small"
+                              />
+                            )}
+                          </Box>
+                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                            Joined {format(new Date(userProfile.joinDate), 'MMMM yyyy')}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                            {userProfile.uploadCount} uploads
+                          </Typography>
+                        </Box>
+                      </Box>
+                      
+                      <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+                        Recent Wins
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {userProfile.recentWins.map((recentWin) => (
+                          <Grid item xs={12} sm={6} md={4} key={recentWin._id}>
+                            <Paper
+                              sx={{ 
+                                p: 2,
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                borderRadius: 2,
+                                border: '1px solid',
+                                borderColor: 'primary.main',
+                              }}
+                            >
+                              <img
+                                src={getImageUrl(recentWin.imageUrl)}
+                                alt={recentWin.title}
+                                style={{
+                                  width: '100%',
+                                  height: '120px',
+                                  objectFit: 'cover',
+                                  borderRadius: '8px',
+                                  marginBottom: '8px',
+                                }}
+                              />
+                              <Typography variant="subtitle2" gutterBottom>
+                                {recentWin.title}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                                {formatDistanceToNow(new Date(recentWin.createdAt), { addSuffix: true })}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
+                </DialogContent>
+              </>
+            ) : (
+              <DialogContent>
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+                  <CircularProgress />
                 </Box>
-                
-                {/* Recent Wins Grid */}
-                {userProfile.recentWins?.length > 0 && (
-                  <>
-                    <Typography variant="h6" sx={{ mb: 2 }}>Recent Wins</Typography>
-                    <Grid container spacing={2}>
-                      {userProfile.recentWins.slice(0, 6).map((win) => (
-                        <Grid item xs={12} sm={6} md={4} key={win._id}>
-                          <Card 
-                            sx={{ 
-                              height: '100%',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              '&:hover': {
-                                transform: 'scale(1.02)',
-                                transition: 'transform 0.2s'
-                              }
-                            }}
-                          >
-                            <CardMedia
-                              component="img"
-                              height="140"
-                              image={getImageUrl(win.image)}
-                              alt={win.title}
-                              sx={{ objectFit: 'cover' }}
-                            />
-                            <CardContent sx={{ flexGrow: 1 }}>
-                              <Typography variant="subtitle1" noWrap>
-                                {win.title}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {formatDistanceToNow(new Date(win.createdAt), { addSuffix: true })}
-                              </Typography>
-                            </CardContent>
-                          </Card>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </>
-                )}
               </DialogContent>
             )}
           </Dialog>
