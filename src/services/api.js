@@ -103,9 +103,9 @@ export const api = {
   // Auth methods
   async login(username, password) {
     try {
-      console.log('Attempting login with URL:', axiosInstance.defaults.baseURL + '/api/auth/login');
+      console.log('Attempting login with URL:', axiosInstance.defaults.baseURL + '/api/login');
       
-      const response = await axiosInstance.post('/api/auth/login', {
+      const response = await axiosInstance.post('/api/login', {
         username: username,
         password: password
       }, {
@@ -133,7 +133,7 @@ export const api = {
 
   async logout() {
     try {
-      await axiosInstance.post('/api/auth/logout');
+      await axiosInstance.post('/api/logout');
     } catch (error) {
       // Ignore logout errors
     } finally {
@@ -143,7 +143,7 @@ export const api = {
 
   async verifyToken() {
     try {
-      const response = await axiosInstance.get('/api/auth/verify');
+      const response = await axiosInstance.get('/api/verify');
       return response.status === 200;
     } catch (error) {
       return false;
