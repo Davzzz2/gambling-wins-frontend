@@ -2,12 +2,17 @@ import axios from 'axios';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000',
+  baseURL: process.env.REACT_APP_BACKEND_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Throw error if backend URL is not configured
+if (!process.env.REACT_APP_BACKEND_URL) {
+  console.error('Backend URL not configured. Please set REACT_APP_BACKEND_URL environment variable.');
+}
 
 // Remove URL from error messages
 const sanitizeError = (error) => {
