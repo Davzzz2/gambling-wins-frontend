@@ -404,34 +404,25 @@ const Home = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userProfileLoading, setUserProfileLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        return JSON.parse(storedUser);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        return null;
-      }
-    }
-    return null;
-  });
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    const handleStorageChange = () => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          setCurrentUser(JSON.parse(storedUser));
-        } catch (error) {
-          console.error('Error parsing user data:', error);
+    const fetchUserData = async () => {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (storedUser.username) {
+          const response = await api.get(`/api/users/${storedUser.username}`);
+          setCurrentUser(response.data);
         }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    if (isAuthenticated) {
+      fetchUserData();
+    }
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
     logout();
@@ -727,14 +718,8 @@ const Home = () => {
                     }}
                   >
                     <Avatar
-                      src={(() => {
-                        try {
-                          const user = JSON.parse(localStorage.getItem('user') || '{}');
-                          return user.profilePicture;
-                        } catch (error) {
-                          return null;
-                        }
-                      })()}
+                      src={currentUser?.profilePicture}
+                      alt={currentUser?.username}
                       sx={{ 
                         width: 32, 
                         height: 32,
