@@ -1,18 +1,29 @@
 import axios from 'axios';
 
+// Debug environment variables in development
+if (process.env.NODE_ENV === 'development') {
+  console.log('Environment Variables:', {
+    NODE_ENV: process.env.NODE_ENV,
+    BACKEND_URL: process.env.REACT_APP_BACKEND_URL,
+  });
+}
+
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
 // Create axios instance with default config
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_BACKEND_URL,
+  baseURL: backendUrl,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Throw error if backend URL is not configured
-if (!process.env.REACT_APP_BACKEND_URL) {
-  console.error('Backend URL not configured. Please set REACT_APP_BACKEND_URL environment variable.');
-}
+// Debug axios configuration
+console.log('Axios Instance Config:', {
+  baseURL: axiosInstance.defaults.baseURL,
+  timeout: axiosInstance.defaults.timeout,
+});
 
 // Remove URL from error messages
 const sanitizeError = (error) => {
@@ -33,6 +44,15 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Debug request config
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Request Config:', {
+        url: config.url,
+        method: config.method,
+        baseURL: config.baseURL,
+        headers: config.headers,
+      });
+    }
     return config;
   },
   (error) => {
@@ -49,6 +69,17 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
+    // Debug error response
+    console.error('API Error:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+      }
+    });
+
     const originalRequest = error.config;
 
     // Handle token expiration
@@ -72,9 +103,16 @@ export const api = {
   // Auth methods
   async login(username, password) {
     try {
+      console.log('Attempting login with URL:', axiosInstance.defaults.baseURL + '/api/auth/login');
+      
       const response = await axiosInstance.post('/api/auth/login', {
-        username,
-        password,
+        username: username,
+        password: password
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
       
       if (response.data.token) {
@@ -84,6 +122,11 @@ export const api = {
       
       return response.data;
     } catch (error) {
+      console.error('Login error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw sanitizeError(error);
     }
   },
