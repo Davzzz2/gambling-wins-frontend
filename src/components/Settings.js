@@ -17,9 +17,12 @@ import { formatDistanceToNow } from 'date-fns';
 
 const BACKEND_URL = process.env.REACT_APP_API_URL;
 
-const getImageUrl = (path) => {
-  if (!path) return null;
-  return path.startsWith('http') ? path : `${BACKEND_URL}${path}`;
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith('http')) {
+    return imageUrl;
+  }
+  return `${BACKEND_URL}${imageUrl}`;
 };
 
 function Settings() {
