@@ -22,36 +22,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CloseIcon from '@mui/icons-material/Close';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import { formatDistanceToNow, format } from 'date-fns';
-import axios from 'axios';
-
-const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  withCredentials: true,
-  // Disable axios logging
-  silent: true
-});
-
-// Add request interceptor to handle authorization silently
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
-
-// Add response interceptor to handle errors silently
-api.interceptors.response.use(
-  (response) => response,
-  (error) => Promise.reject(error)
-);
+import { formatDistanceToNow } from 'date-fns';
+import { api } from '../services/api';
 
 const Win = ({ win, onApprove, onReject, isPending = false }) => {
   const [open, setOpen] = useState(false);
@@ -71,12 +43,12 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
     }
     
     // Check if it's a full backend URL without protocol
-    if (imageUrl.startsWith(process.env.REACT_APP_API_URL.replace(/^https?:\/\//, ''))) {
+    if (imageUrl.startsWith(process.env.REACT_APP_BACKEND_URL.replace(/^https?:\/\//, ''))) {
       return `https://${imageUrl}`;
     }
     
     // Handle relative paths by prepending the API URL
-    return `${process.env.REACT_APP_API_URL}${imageUrl}`;
+    return `${process.env.REACT_APP_BACKEND_URL}${imageUrl}`;
   };
 
   const handleOpen = () => {
@@ -96,14 +68,9 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
     e.stopPropagation();
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await api.get(`/api/users/${win.createdBy}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      console.log('User profile response:', response.data);
-      setUserProfile(response.data);
+      const response = await api.getUserProfile(win.createdBy);
+      console.log('User profile response:', response);
+      setUserProfile(response);
       setUserProfileOpen(true);
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -363,29 +330,25 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
           }
         }}
       >
-        <DialogTitle className="css-ndz3mt-MuiTypography-root-MuiDialogTitle-root">
-          <Box className="css-69i1ev" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box className="css-70qvj9" sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography variant="h6" className="css-aplrrz-MuiTypography-root">
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="h6">
                 User Profile
               </Typography>
             </Box>
-            <IconButton 
-              onClick={handleCloseUserProfile}
-              className="css-1drgtl0-MuiButtonBase-root-MuiIconButton-root"
-            >
+            <IconButton onClick={handleCloseUserProfile}>
               <CloseIcon />
             </IconButton>
           </Box>
         </DialogTitle>
-        <DialogContent className="css-ypiqx9-MuiDialogContent-root">
+        <DialogContent>
           {userProfile && (
-            <Box className="css-1sf3xto" sx={{ py: 2 }}>
-              <Box className="css-1ol10sz" sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+            <Box sx={{ py: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
                 <Avatar
                   src={userProfile.profilePicture}
                   alt={userProfile.username}
-                  className="css-137dmwe-MuiAvatar-root"
                   sx={{ 
                     width: 80, 
                     height: 80,
@@ -395,7 +358,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                     boxShadow: '0 0 20px hsla(220, 73%, 63%, 0.5)',
                   }}
                 />
-                <Box className="css-0">
+                <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                     <Typography variant="h6" component="div">
                       {userProfile.username}
@@ -441,13 +404,13 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                 </Box>
               </Box>
 
-              <Typography variant="h6" gutterBottom className="css-1h31zqw-MuiTypography-root">
+              <Typography variant="h6" gutterBottom>
                 Recent Wins
               </Typography>
-              <Grid container spacing={2} className="css-mhc70k-MuiGrid-root">
+              <Grid container spacing={2}>
                 {userProfile.recentWins.map((recentWin) => (
-                  <Grid item xs={12} sm={6} md={4} key={recentWin._id} className="css-11l5t4l-MuiGrid-root">
-                    <Paper className="css-1mycpck-MuiPaper-root">
+                  <Grid item xs={12} sm={6} md={4} key={recentWin._id}>
+                    <Paper>
                       <img
                         src={getImageUrl(recentWin.imageUrl)}
                         alt={recentWin.title}
@@ -459,10 +422,10 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
                           marginBottom: '8px',
                         }}
                       />
-                      <Typography variant="subtitle2" gutterBottom className="css-1rtsaks-MuiTypography-root">
+                      <Typography variant="subtitle2" gutterBottom>
                         {recentWin.title}
                       </Typography>
-                      <Typography variant="caption" className="css-ux9og8-MuiTypography-root">
+                      <Typography variant="caption">
                         {formatDistanceToNow(new Date(recentWin.createdAt), { addSuffix: true })}
                       </Typography>
                     </Paper>
