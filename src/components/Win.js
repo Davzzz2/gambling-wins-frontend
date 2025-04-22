@@ -39,7 +39,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
     if (!imageUrl) return null;
     
     // If it's a Discord avatar URL or any other complete URL, return it as is
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    if (imageUrl.startsWith('http')) {
       return imageUrl;
     }
     
@@ -120,7 +120,7 @@ const Win = ({ win, onApprove, onReject, isPending = false }) => {
             onClick={handleOpenUserProfile}
           >
             <Avatar
-              src={win.userProfilePic}
+              src={getImageUrl(win.userProfilePic)}
               alt={win.createdBy}
               sx={{ 
                 width: 40, 
