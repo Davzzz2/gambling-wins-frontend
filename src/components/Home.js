@@ -62,8 +62,8 @@ const BACKEND_URL = process.env.REACT_APP_API_URL;
 
 // Helper function to get image URL
 const getImageUrl = (imageUrl) => {
-  if (!imageUrl) return '/default-avatar.png';  // Return default avatar if no image
-  if (imageUrl.startsWith('http') || imageUrl.startsWith('data:')) {
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith('http')) {
     return imageUrl;
   }
   return `${BACKEND_URL}${imageUrl}`;
@@ -727,14 +727,17 @@ const Home = () => {
                     }}
                   >
                     <Avatar
-                      src={currentUser?.profilePicture}
-                      alt={currentUser?.username}
+                      src={(() => {
+                        try {
+                          const user = JSON.parse(localStorage.getItem('user') || '{}');
+                          return user.profilePicture;
+                        } catch (error) {
+                          return null;
+                        }
+                      })()}
                       sx={{ 
                         width: 32, 
                         height: 32,
-                        border: '2px solid',
-                        borderColor: 'primary.main',
-                        boxShadow: '0 0 10px hsla(220, 73%, 63%, 0.5)',
                         bgcolor: 'hsla(220, 73%, 63%, 0.2)',
                       }}
                     />
