@@ -1,57 +1,119 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { api } from '../services/api';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [lastTokenCheck, setLastTokenCheck] = useState(0);
 
+  // Initialize auth state from secure storage
   useEffect(() => {
-    // Check for existing auth on mount
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (token && storedUser) {
+    const initializeAuth = async () => {
       try {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-        setIsAuthenticated(true);
-        setIsAdmin(userData.role === 'admin');
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+
+        if (token && storedUser) {
+          const userData = JSON.parse(storedUser);
+          
+          // Verify token is still valid
+          const isValid = await api.verifyToken();
+          if (isValid) {
+            setUser(userData);
+          } else {
+            // Clear invalid auth state
+            handleLogout();
+          }
+        }
       } catch (error) {
-        console.error('Error parsing stored user data:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        console.error('Auth initialization error:', error);
+        handleLogout();
+      } finally {
+        setLoading(false);
       }
+    };
+
+    initializeAuth();
+  }, []);
+
+  // Periodic token validation
+  useEffect(() => {
+    const validateToken = async () => {
+      try {
+        const now = Date.now();
+        // Check token every 5 minutes
+        if (now - lastTokenCheck > 5 * 60 * 1000) {
+          const isValid = await api.verifyToken();
+          if (!isValid) {
+            handleLogout();
+          }
+          setLastTokenCheck(now);
+        }
+      } catch (error) {
+        console.error('Token validation error:', error);
+        handleLogout();
+      }
+    };
+
+    if (user) {
+      const interval = setInterval(validateToken, 60 * 1000); // Check every minute
+      return () => clearInterval(interval);
+    }
+  }, [user, lastTokenCheck]);
+
+  const login = useCallback(async (userData) => {
+    try {
+      setUser(userData);
+      // Additional security measures handled by api service
+    } catch (error) {
+      console.error('Login error:', error);
+      handleLogout();
     }
   }, []);
 
-  const login = async (userData) => {
-    try {
-      setUser(userData);
-      setIsAuthenticated(true);
-      setIsAdmin(userData.role === 'admin');
-    } catch (error) {
-      console.error('Error in login:', error);
-      throw error;
-    }
-  };
-
-  const logout = () => {
+  const handleLogout = useCallback(() => {
+    // Clear auth state
+    setUser(null);
+    
+    // Clear secure storage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
-    setIsAdmin(false);
-  };
+    sessionStorage.clear();
+    
+    // Clear any cached API data
+    api.clearCache();
+    
+    // Invalidate token on server
+    try {
+      api.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  }, []);
+
+  const updateUser = useCallback((updates) => {
+    setUser(prev => {
+      const updated = { ...prev, ...updates };
+      localStorage.setItem('user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   const value = {
-    isAuthenticated,
-    isAdmin,
     user,
+    loading,
     login,
-    logout
+    logout: handleLogout,
+    updateUser,
+    isAdmin: user?.role === 'admin',
+    isAuthenticated: !!user,
   };
+
+  if (loading) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <AuthContext.Provider value={value}>
@@ -60,12 +122,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export default AuthContext; 
+export default AuthProvider; 
